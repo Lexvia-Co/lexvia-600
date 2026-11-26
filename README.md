@@ -1,26 +1,34 @@
 # Lexvia 600
 
-Run npm, Git, and Neon commands from this directory. The Next.js routes and pages live in `app/`. Clerk handles sign-in through `proxy.ts` and the root layout. Neon clients live in `lib/neon/`, deployable handlers in `functions/`, and database changes in `migrations/`.
+Lexvia 600 is a Next.js App Router project with Clerk authentication and a Neon Postgres backend.
 
-## Getting Started
+## Project structure
 
-First, run the development server:
+| Path | Purpose |
+| --- | --- |
+| `app/` | Home page, root layout with Clerk controls, global styles, and the `/api/neon/check` diagnostic route. |
+| `proxy.ts` | Clerk middleware for incoming requests. |
+| `public/` | Static assets served by Next.js. |
+| `lib/neon/` | Server-side database client and Neon service checks. |
+| `functions/`, `neon.ts` | Neon function handlers and the configuration for deploying functions and other Neon services. |
+| `src/db/schema.ts`, `drizzle.config.ts` | The Drizzle `users` table definition and the configuration for Drizzle Kit. |
+| `src/index.ts` | Standalone Drizzle example that creates, reads, updates, and deletes a sample user. |
+| `migrations/`, `scripts/` | SQL for the Realtime probe table and scripts to apply the migration and verify Neon services. |
 
-```bash
+## Local development
+
+Run these commands from the repository root with your Clerk and Neon credentials in `.env.local`.
+
+```sh
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [localhost:3000](http://localhost:3000). Edit `app/page.tsx` to change the home page.
 
-## Neon backend
+## Neon setup and verification
 
-Run the following from this directory after linking the intended Neon branch. `neon deploy` applies the services declared in `neon.ts` and pulls their credentials into the local environment file. Clerk handles user authentication.
+After linking the intended Neon branch, deploy its services, apply the Realtime probe migration, and verify the production build.
 
 ```sh
 neon deploy
@@ -29,23 +37,4 @@ npm run build
 npm run neon:verify
 ```
 
-The migration creates the table used to observe committed changes over Realtime. The verification command starts the production build on a temporary loopback port, runs all five checks through `POST /api/neon/check`, and exits with a failing status if any service fails. It uses a random token for that process. The checks make one embedding request, invoke the `hello` function, query Postgres, and round-trip a temporary object and a Realtime row.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The verifier calls `POST /api/neon/check` on a temporary local server. It queries Postgres, invokes the `hello` function, requests an embedding, and tests Object Storage and Realtime with temporary data.
