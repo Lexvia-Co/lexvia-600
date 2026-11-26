@@ -1,12 +1,29 @@
 # Repository Guidelines
 
+## App Language
+
+Write vber’s user-facing text in Mandarin using simplified Chinese characters for readers in mainland China. Keep Australian legal terms in their official English wording. When a term needs explanation, explain it in Mandarin.
+
 ## Project Structure
 
 The repository root contains the Next.js app, npm manifest, and Neon configuration. Edit `app/page.tsx` for the home page and `app/layout.tsx` for shared layout and Clerk controls. Keep global styles in `app/globals.css` and serve static files from `public/`. Clerk middleware lives in `proxy.ts`.
 
 Keep server-side Neon clients in `lib/neon/`, deployable handlers in `functions/`, and SQL migrations in `migrations/`. When moving a deployed handler, update its `source` path in `neon.ts`. Keep credentials in the Git-ignored `.env.local`.
 
-Follow the [data-fetching policy](docs/data-fetching.md) for all application reads and database operations.
+## Development Skills
+
+**Before starting a task, identify the skills that apply, read their `SKILL.md` files, and follow their guidance.** When a task spans several areas, use the relevant skills together. Use the table below for common tasks and the [UI and Web Design](#ui-and-web-design) section for interface work.
+
+| When working on | Use |
+| --- | --- |
+| Protecting pages and Server Actions or resolving the signed-in applicant | [clerk-nextjs-patterns](.agents/skills/clerk-nextjs-patterns/SKILL.md) |
+| Testing sign-out, draft resume, or access from two accounts in isolated browser sessions | [clerk-testing](.agents/skills/clerk-testing/SKILL.md) |
+| Changing the database schema, queries, or versioned migrations | [drizzle](.agents/skills/drizzle/SKILL.md) |
+| Writing or reviewing Mandarin interface copy, visa guidance, or evidence checklists | [vber-visa-content](.agents/skills/vber-visa-content/SKILL.md) |
+
+Apply the [data-fetching policy](docs/data-fetching.md) to Server Component reads and the [data-mutation policy](docs/data-mutations.md) to typed Server Actions. Keep database queries in server-only Drizzle helpers under `data/` and scope applicant data access to the owner identified by the server session.
+
+When upgrading Drizzle Kit, refresh the project’s `drizzle` skill from `node_modules/drizzle-kit/skills/drizzle/` so its migration instructions match the installed CLI.
 
 ## Development Commands
 

@@ -1,4 +1,10 @@
-# UI component decisions
+# Vber UI guidelines
+
+## App name and language
+
+Use **Vber** wherever the app name appears. Write user-facing text in **Mandarin Chinese**, including navigation, buttons, form labels, help text, and error messages. Keep legal terms and other specialized terminology in their original language, and write any surrounding explanation in Mandarin.
+
+## UI component decisions
 
 **Use the [repository shadcn/ui skill](../.agents/skills/shadcn/SKILL.md) whenever a task involves a UI component decision.** This applies during planning, design, implementation, and review, including when selecting a form control, composing a page, or changing how a component looks or behaves.
 

@@ -1,6 +1,8 @@
-# Lexvia 600
+# vber
 
-Lexvia 600 is a Next.js App Router project with Clerk authentication and a Neon Postgres backend.
+**vber helps people in mainland China apply for Australian visas.**
+
+The app uses the Next.js App Router, Clerk authentication, and a Neon Postgres backend.
 
 ## Project structure
 
