@@ -13,5 +13,8 @@ export default defineConfig({
   dialect: "postgresql",
   dbCredentials: url ? { url } : undefined,
   schemaFilter: ["public"],
-  tablesFilter: ["users", "lexvia_realtime_probes"],
+  tablesFilter: [
+    "users", "lexvia_realtime_probes", "applications", "applicant_details",
+    "evidence_items", "documents", "storage_cleanup",
+  ],
 });
