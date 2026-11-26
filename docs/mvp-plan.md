@@ -1,4 +1,4 @@
-# Lexvia 600 MVP plan
+# VBER MVP plan
 
 Build a DIY workspace where an applicant can prepare an Australian Visitor visa (subclass 600) application, pause, and return with their answers and supporting files intact. Start with one adult preparing their own Tourist stream application from outside Australia for a holiday or to visit family or friends. The applicant lodges, pays, and receives the decision through Home Affairs. [Tourist stream guide](https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/visitor-600/tourist-stream-overseas?bk=HowTo)
 

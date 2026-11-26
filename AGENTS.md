@@ -2,7 +2,7 @@
 
 ## App Language
 
-Write vber’s user-facing text in Mandarin using simplified Chinese characters for readers in mainland China. Keep Australian legal terms in their official English wording. When a term needs explanation, explain it in Mandarin.
+Write VBER’s user-facing text in Mandarin using simplified Chinese characters for readers in mainland China. Keep Australian legal terms in their official English wording. When a term needs explanation, explain it in Mandarin.
 
 ## Project Structure
 

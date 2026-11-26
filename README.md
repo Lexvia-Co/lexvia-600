@@ -1,6 +1,6 @@
-# vber
+# VBER
 
-**vber helps people in mainland China apply for Australian visas.**
+**VBER helps people in mainland China apply for Australian visas.**
 
 The app uses the Next.js App Router, Clerk authentication, and a Neon Postgres backend.
 

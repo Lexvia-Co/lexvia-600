@@ -1,16 +1,16 @@
 ---
 name: vber-visa-content
-description: Write or review vber’s applicant-facing Mandarin interface copy, Australian visitor visa guidance, and evidence checklists for readers in mainland China. Use for localization, English legal terminology, and checking visa claims against Home Affairs.
+description: Write or review VBER’s applicant-facing Mandarin interface copy, Australian visitor visa guidance, and evidence checklists for readers in mainland China. Use for localization, English legal terminology, and checking visa claims against Home Affairs.
 ---
 
-# vber applicant content
+# VBER applicant content
 
-Use the [MVP plan](../../../docs/mvp-plan.md) to identify the applicant and the step. The initial guide covers one adult preparing their own Tourist stream application from outside Australia. vber helps them prepare a draft. They lodge and pay through ImmiAccount.
+Use the [MVP plan](../../../docs/mvp-plan.md) to identify the applicant and the step. The initial guide covers one adult preparing their own Tourist stream application from outside Australia. VBER helps them prepare a draft. They lodge and pay through ImmiAccount.
 
 ## Write and review the interface
 
 - Write everyday actions and explanations in natural Mandarin using simplified Chinese characters. Preserve official wording such as `Visitor visa (subclass 600)`, `Tourist stream`, and `ImmiAccount`. Explain an unfamiliar term in Mandarin on first use when it helps the reader.
-- Name the action the control actually performs. Use “保存草稿” for saving in vber and “前往 ImmiAccount” for a link that opens the government service.
+- Name the action the control actually performs. Use “保存草稿” for saving in VBER and “前往 ImmiAccount” for a link that opens the government service.
 - When reviewing a page, check its shared layout, sign-in controls, metadata, accessible labels, and errors as well as visible body text. Check that the HTML language declaration matches the Chinese content, for example `lang="zh-CN"`. Give the location and a concrete replacement for each issue.
 
 ## Verify guidance and evidence

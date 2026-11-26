@@ -21,8 +21,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const appName = "VBER";
+
 export const metadata: Metadata = {
-  title: "Lexvia 600 | Australian visitor visa preparation",
+  applicationName: appName,
+  title: `澳大利亚访客签证申请准备 | ${appName}`,
   description: "Prepare for the Australian Visitor visa (subclass 600) Tourist stream.",
 };
 
@@ -36,7 +39,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ClerkProvider>
           <header className="border-b border-border">
             <div className="mx-auto flex min-h-16 w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-3">
-              <span className="text-lg font-semibold">Lexvia 600</span>
+              <span className="text-lg font-semibold">{appName}</span>
               <div className="flex items-center gap-2">
                 <Suspense>
                   <Show when="signed-out">

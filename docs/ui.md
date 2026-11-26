@@ -1,8 +1,8 @@
-# Vber UI guidelines
+# VBER UI guidelines
 
 ## App name and language
 
-Use **Vber** wherever the app name appears. Write user-facing text in **Mandarin Chinese**, including navigation, buttons, form labels, help text, and error messages. Keep legal terms and other specialized terminology in their original language, and write any surrounding explanation in Mandarin.
+Use **VBER** wherever the app name appears. Write user-facing text in **Mandarin Chinese**, including navigation, buttons, form labels, help text, and error messages. Keep legal terms and other specialized terminology in their original language, and write any surrounding explanation in Mandarin.
 
 ## UI component decisions
 
