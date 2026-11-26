@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { saveDraft } from "@/app/applications/actions";
 import { STEP_FIELDS, STEP_LABELS, normalizeAnswers, type Answers, type Step } from "@/lib/workspace/model";
 import { AnswerFields } from "./answer-fields";
+import { EvidenceChecklist, type GroupedFiles } from "./evidence-checklist";
+import { TemplateEditor } from "./template-editor";
 import { formatDate, type AnswerErrors, type SavedTemplates } from "./editor-types";
 
-const STEPS: Step[] = ["identity"];
-
-type GroupedFiles = Record<string, never[]>;
+const STEPS: Step[] = ["identity", "visit", "funding", "evidence", "templates"];
 
 type Props = {
   id: string; revision: number; step: Step; initialAnswers: Partial<Answers>;
@@ -19,11 +19,11 @@ type Props = {
 };
 
 export function DraftEditor(props: Props) {
-  const { id, step } = props;
+  const { id, step, files } = props;
   const router = useRouter();
   const [answers, setAnswers] = useState(() => normalizeAnswers(props.initialAnswers));
-  const [notes] = useState(props.initialNotes);
-  const [templates] = useState(props.initialTemplates);
+  const [notes, setNotes] = useState(props.initialNotes);
+  const [templates, setTemplates] = useState(props.initialTemplates);
   const [revision, setRevision] = useState(props.revision);
   const [dates, setDates] = useState({ saved: props.updatedAt, expiry: props.expiresAt });
   const [dirty, setDirty] = useState(false);
@@ -31,10 +31,26 @@ export function DraftEditor(props: Props) {
   const [conflict, setConflict] = useState(false);
   const [errors, setErrors] = useState<AnswerErrors>({});
   const [pending, start] = useTransition();
+  const [seenRevision, setSeenRevision] = useState(props.revision);
   const heading = useRef<HTMLHeadingElement>(null);
   const next = STEPS[STEPS.indexOf(step) + 1];
   const fields = STEP_FIELDS[step];
   const finalStep = step === "aftercare";
+
+  // Next may preserve a previously visited step. Adopt the latest server snapshot
+  // for a clean form and keep a dirty form's original revision for conflict detection.
+  if (props.revision !== seenRevision) {
+    setSeenRevision(props.revision);
+    if (!dirty) {
+      setAnswers(normalizeAnswers(props.initialAnswers));
+      setNotes(props.initialNotes);
+      setTemplates(props.initialTemplates);
+      setRevision(props.revision);
+      setDates({ saved: props.updatedAt, expiry: props.expiresAt });
+      setErrors({});
+      setConflict(false);
+    }
+  }
 
   useEffect(() => { heading.current?.focus({ preventScroll: true }); }, []);
   useEffect(() => {
@@ -104,6 +120,13 @@ export function DraftEditor(props: Props) {
         </fieldset>
         {actionBar}
       </form> : <>
+        <div inert={pending}>
+          {step === "evidence" && <EvidenceChecklist applicationId={id} answers={answers} files={files} notes={notes}
+            expiry={formatDate(dates.expiry)} onChange={(key, value) => { setNotes((current) => ({...current, [key]: value})); changed(); }} />}
+          {step === "templates" && <TemplateEditor answers={answers} templates={templates} onChange={(kind, entry) => {
+            setTemplates((current) => ({...current, [kind]: entry})); changed();
+          }} />}
+        </div>
         {actionBar}
       </>}
       <p role="status" className="workspace-meta no-print">{pending ? "正在保存…" : message || (dirty ? "有尚未保存的修改" : "")}</p>

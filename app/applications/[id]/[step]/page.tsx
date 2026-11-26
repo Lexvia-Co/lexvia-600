@@ -2,7 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
 import { getApplication } from "@/data/applications";
 import { DraftEditor } from "@/components/workspace/draft-editor";
-type GroupedFiles = Record<string, never[]>;
+import type { GroupedFiles } from "@/components/workspace/evidence-checklist";
 import { STEP_FIELDS, type Step } from "@/lib/workspace/model";
 
 export const metadata = { title: "申请准备工作区 | VBER" };
@@ -10,7 +10,7 @@ export const metadata = { title: "申请准备工作区 | VBER" };
 export default async function DraftPage({ params }: { params: Promise<{id: string; step: string}> }) {
   const { userId } = await auth.protect();
   const {id, step: routeStep} = await params;
-  const available: Step[] = ["identity"];
+  const available: Step[] = ["identity", "visit", "funding", "evidence", "templates"];
   const step = available.find((value) => value === routeStep);
   if (!step) notFound();
   const draft = await getApplication(userId, id);

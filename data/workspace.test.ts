@@ -50,3 +50,14 @@ test("save, resume, revision conflicts and owner isolation", async () => {
   assert.ok(await renewApplication(owner, id) >= draft.expiresAt);
   assert.equal((await getApplication(owner, id))?.revision, draft.revision);
 });
+
+test("edited trip preserves inactive evidence notes and customized templates", async () => {
+  const id = await createApplication(owner);
+  await saveApplication(owner, id, 1, { lastStep: "templates", answers: { purpose: "visit", payer: "host" },
+    notes: { invitation: "Synthetic note" }, templates: { invitation: { body: "My original words", fingerprint: "v1" } } });
+  await saveApplication(owner, id, 2, { lastStep: "review", answers: { purpose: "holiday", payer: "self" } });
+  const persisted = await getApplication(owner, id);
+  assert.equal(persisted?.answers.purpose, "holiday");
+  assert.equal(persisted?.notes.invitation, "Synthetic note");
+  assert.equal(persisted?.templates.invitation?.body, "My original words");
+});

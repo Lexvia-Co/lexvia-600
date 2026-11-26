@@ -10,7 +10,8 @@
     "neon:verify": "node --conditions=react-server --import=tsx --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/verify-neon.mjs",
     "neon:migrate": "drizzle-kit migrate",
     "db:demo": "node --conditions=react-server --import=tsx src/index.ts",
-    "db:test": "node --conditions=react-server --import=tsx --test data/workspace.test.ts"
+    "db:test": "node --conditions=react-server --import=tsx --test data/workspace.test.ts",
+    "test": "node --conditions=react-server --import=tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@clerk/localizations": "^4.28.0",

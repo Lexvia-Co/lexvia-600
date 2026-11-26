@@ -69,3 +69,12 @@
   .workspace-review-item, .workspace-values > div { break-inside: avoid; }
   .workspace :where(h1,h2,h3,h4) { break-after: avoid; }
 }
+
+.template-preview[open] { position: fixed; inset: 0; width: min(42rem, 92vw); max-height: 88vh; margin: auto; overflow: auto; padding: clamp(1.3rem, 4vw, 2.5rem); border: 1px solid var(--border); border-radius: .65rem; background: var(--background); color: var(--foreground); }
+.template-preview::backdrop { background: rgb(10 18 23 / .55); }
+.template-paper { white-space: pre-wrap; overflow-wrap: anywhere; margin-block: 1.2rem; }
+@media print {
+  body:has(.template-preview[open]) :where(*):not(:has(.template-preview[open])):not(.template-preview[open], .template-preview[open] *) { display: none !important; }
+  .template-preview[open] { position: static; display: block; width: 100%; max-height: none; margin: 0; overflow: visible; padding: 0; border: 0; color: black; background: white; }
+  .template-preview::backdrop { background: transparent; }
+}

@@ -13,8 +13,10 @@ import { isDocumentId } from "@/lib/workspace/storage-policy";
 
 const invalid = { ok: false as const, message: "提交的信息有误，请检查后重试。" };
 
-function mutationError(error: unknown) {
+function mutationError(error: unknown, operation: "create" | "resume" | "delete" | "save") {
   const code = typeof error === "object" && error !== null && "code" in error ? error.code : "";
+  const reason = code === "conflict" || code === "unavailable" ? code : "write_failed";
+  console.warn("workspace_mutation_failed", { operation, reason });
   if (code === "conflict") {
     return { ok: false as const, conflict: true, message: "另一处已保存了更新。请先复制要保留的内容，再重新载入草稿。" };
   }
@@ -36,7 +38,7 @@ export async function createDraft(scopeConfirmed: boolean) {
     revalidatePath("/applications");
     return { ok: true as const, id };
   } catch (error) {
-    return mutationError(error);
+    return mutationError(error, "create");
   }
 }
 
@@ -48,7 +50,7 @@ export async function resumeDraft(id: string) {
     revalidatePath("/applications");
     return { ok: true as const };
   } catch (error) {
-    return mutationError(error);
+    return mutationError(error, "resume");
   }
 }
 
@@ -60,7 +62,7 @@ export async function removeDraft(id: string) {
     revalidatePath("/applications", "layout");
     return { ok: true as const };
   } catch (error) {
-    return mutationError(error);
+    return mutationError(error, "delete");
   }
 }
 
@@ -97,9 +99,10 @@ export async function saveDraft(input: SaveInput): Promise<SaveResult> {
   try {
     const saved = await saveApplication(userId, id, revision, { lastStep: destination, answers, notes, templates });
     revalidatePath("/applications");
-    revalidatePath(`/applications/${id}/[step]`, "page");
+    revalidatePath(`/applications/${id}/${step}`);
+    if (destination !== step) revalidatePath(`/applications/${id}/${destination}`);
     return { ok: true, revision: saved.revision, updatedAt: saved.updatedAt.toISOString(), expiresAt: saved.expiresAt.toISOString() };
   } catch (error) {
-    return mutationError(error);
+    return mutationError(error, "save");
   }
 }
