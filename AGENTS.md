@@ -6,6 +6,8 @@ The repository root contains the Next.js app, npm manifest, and Neon configurati
 
 Keep server-side Neon clients in `lib/neon/`, deployable handlers in `functions/`, and SQL migrations in `migrations/`. When moving a deployed handler, update its `source` path in `neon.ts`. Keep credentials in the Git-ignored `.env.local`.
 
+Follow the [data-fetching policy](docs/data-fetching.md) for all application reads and database operations.
+
 ## Development Commands
 
 Run these commands from the repository root.
@@ -21,6 +23,8 @@ Use strict TypeScript, two-space indentation, and double-quoted strings. Use Pas
 
 ## UI and Web Design
 
+Follow the [UI component policy](docs/ui.md) whenever a task involves a UI component decision, including during planning and review.
+
 Before writing or changing UI or web design code, read and use both repository skills. This applies to pages, components, styling, responsive layouts, accessibility, and browser interactions.
 
 1. Start with [Google’s Modern Web Guidance](.agents/skills/modern-web-guidance/SKILL.md). Search for the web platform feature or UI pattern and apply the relevant guidance.
@@ -28,7 +32,7 @@ Before writing or changing UI or web design code, read and use both repository s
 
 ## Testing
 
-Run lint and the production build. Exercise changed routes in a browser and check responsive or theme changes at narrow and wide widths in light and dark mode. After a build, `npm run neon:verify` tests the configured Neon branch through the app. The check performs live service calls and writes temporary test data.
+Run lint and the production build. Exercise changed routes in a browser and check responsive or theme changes at narrow and wide widths in light and dark mode. Run `npm run neon:verify` from the command line to test the configured Neon branch. The check performs live service calls and writes temporary test data.
 
 ## Commits and Pull Requests
 

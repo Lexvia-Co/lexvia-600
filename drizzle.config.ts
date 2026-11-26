@@ -8,11 +8,10 @@ if (!process.env.DATABASE_URL_UNPOOLED && !process.env.DATABASE_URL) {
 const url = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
 
 export default defineConfig({
-  out: "./drizzle",
+  out: "./migrations",
   schema: "./src/db/schema.ts",
   dialect: "postgresql",
   dbCredentials: url ? { url } : undefined,
   schemaFilter: ["public"],
-  // The Realtime probe table is managed by the SQL migration in migrations/.
-  tablesFilter: ["!lexvia_realtime_probes"],
+  tablesFilter: ["users", "lexvia_realtime_probes"],
 });

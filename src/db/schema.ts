@@ -1,7 +1,13 @@
-import { integer, pgTable, varchar } from "drizzle-orm/pg-core";
+import { integer, pgTable, text, uuid, varchar } from "drizzle-orm/pg-core";
+
 export const usersTable = pgTable("users", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   name: varchar({ length: 255 }).notNull(),
   age: integer().notNull(),
   email: varchar({ length: 255 }).notNull().unique(),
+});
+
+export const realtimeProbes = pgTable("lexvia_realtime_probes", {
+  id: uuid().primaryKey(),
+  marker: text().notNull(),
 });
