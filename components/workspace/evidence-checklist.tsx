@@ -2,6 +2,7 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { EVIDENCE_LABELS, OFFICIAL, evidenceFor, type Answers } from "@/lib/workspace/model";
 import type { EvidenceFile } from "@/lib/workspace/storage-policy";
+import { EvidenceFiles } from "./evidence-files";
 
 export type GroupedFiles = Record<string, EvidenceFile[]>;
 
@@ -18,7 +19,7 @@ export function evidenceStatus(files: EvidenceFile[] = [], note = "") {
   return note.trim() ? "已写说明" : "待整理";
 }
 
-export function EvidenceChecklist({ answers, files, notes, onChange, expiry }: {
+export function EvidenceChecklist({ applicationId, answers, files, notes, onChange, expiry }: {
   applicationId: string; answers: Answers; files: GroupedFiles; notes: Record<string, string>;
   onChange: (key: string, value: string) => void; expiry: string;
 }) {
@@ -26,6 +27,7 @@ export function EvidenceChecklist({ answers, files, notes, onChange, expiry }: {
   const count = rules.filter(({key}) => files[key]?.length || notes[key]?.trim()).length;
   function contents(key: string) {
     return <>
+      <EvidenceFiles applicationId={applicationId} evidenceKey={key} files={files[key] ?? []} />
       <Field><FieldLabel htmlFor={`note-${key}`}>补充说明（选填）</FieldLabel>
         <Textarea id={`note-${key}`} name={`note-${key}`} rows={2}
           placeholder="例如，暂时无法提供这份材料的原因" value={notes[key] ?? ""} maxLength={4000}

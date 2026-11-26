@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getApplication } from "@/data/applications";
 import { DraftEditor } from "@/components/workspace/draft-editor";
 import type { GroupedFiles } from "@/components/workspace/evidence-checklist";
+import { buildEvidenceFile } from "@/lib/workspace/storage";
 import { STEP_FIELDS, type Step } from "@/lib/workspace/model";
 
 export const metadata = { title: "申请准备工作区 | VBER" };
@@ -18,6 +19,11 @@ export default async function DraftPage({ params }: { params: Promise<{id: strin
   const needsEvidence = step === "evidence" || step === "review";
   const needsTemplates = step === "templates" || step === "review";
   const files: GroupedFiles = {};
+  if (needsEvidence) {
+    for (const item of draft.documents) {
+      (files[item.evidenceKey] ??= []).push(buildEvidenceFile(item, id));
+    }
+  }
   const keys = step === "evidence" ? ["purpose", "payer"] as const : STEP_FIELDS[step];
   const answers = needsTemplates ? draft.answers : Object.fromEntries(keys.map((key) => [key, draft.answers[key]]));
   return <DraftEditor key={id + step} id={id} step={step} revision={draft.revision} initialAnswers={answers}
