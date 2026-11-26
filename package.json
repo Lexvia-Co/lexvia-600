@@ -1,17 +1,26 @@
 {
-  "name": "clerk-nextjs",
+  "name": "lexvia-600",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "neon:verify": "NODE_ENV=production node scripts/verify-neon.mjs",
+    "neon:migrate": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/migrate-neon.mjs"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.10.10",
+    "@neon/config": "1.11.2",
+    "@neon/env": "^2.1.11",
+    "@neon/realtime": "0.2.0",
+    "aws4fetch": "1.0.20",
     "next": "16.4.6",
+    "pg": "8.23.1",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "ws": "8.22.1"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "4.3.3",

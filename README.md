@@ -1,4 +1,6 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lexvia 600
+
+Run npm, Git, and Neon commands from this directory. The Next.js routes and pages live in `app/`. Clerk handles sign-in through `proxy.ts` and the root layout. Neon clients live in `lib/neon/`, deployable handlers in `functions/`, and database changes in `migrations/`.
 
 ## Getting Started
 
@@ -15,6 +17,19 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## Neon backend
+
+Run the following from this directory after linking the intended Neon branch. `neon deploy` applies the services declared in `neon.ts` and pulls their credentials into the local environment file. Clerk handles user authentication.
+
+```sh
+neon deploy
+npm run neon:migrate
+npm run build
+npm run neon:verify
+```
+
+The migration creates the table used to observe committed changes over Realtime. The verification command starts the production build on a temporary loopback port, runs all five checks through `POST /api/neon/check`, and exits with a failing status if any service fails. It uses a random token for that process. The checks make one embedding request, invoke the `hello` function, query Postgres, and round-trip a temporary object and a Realtime row.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
