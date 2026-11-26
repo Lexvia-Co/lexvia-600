@@ -4,13 +4,12 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { saveDraft } from "@/app/applications/actions";
-import { STEP_FIELDS, STEP_LABELS, normalizeAnswers, type Answers, type Step } from "@/lib/workspace/model";
+import { STEP_FIELDS, STEP_LABELS, STEPS, normalizeAnswers, type Answers, type Step } from "@/lib/workspace/model";
 import { AnswerFields } from "./answer-fields";
 import { EvidenceChecklist, type GroupedFiles } from "./evidence-checklist";
 import { TemplateEditor } from "./template-editor";
+import { Aftercare, WorkspaceReview } from "./workspace-review";
 import { formatDate, type AnswerErrors, type SavedTemplates } from "./editor-types";
-
-const STEPS: Step[] = ["identity", "visit", "funding", "evidence", "templates"];
 
 type Props = {
   id: string; revision: number; step: Step; initialAnswers: Partial<Answers>;
@@ -52,7 +51,19 @@ export function DraftEditor(props: Props) {
     }
   }
 
-  useEffect(() => { heading.current?.focus({ preventScroll: true }); }, []);
+  useEffect(() => {
+    const panel = heading.current?.closest(".workspace-current");
+    const fragment = window.location.hash.slice(1);
+    const target = fragment && panel?.querySelector<HTMLElement>("#" + CSS.escape(fragment));
+    if (target) {
+      const group = target.closest("details");
+      if (group) group.open = true;
+      target.focus();
+      target.scrollIntoView({ block: "center" });
+    } else {
+      heading.current?.focus({ preventScroll: true });
+    }
+  }, [step]);
   useEffect(() => {
     if (!dirty) return;
     function onLeave(event: BeforeUnloadEvent) { event.preventDefault(); event.returnValue = ""; }
@@ -61,7 +72,7 @@ export function DraftEditor(props: Props) {
   }, [dirty]);
 
   function changed() { setDirty(true); setMessage(""); }
-  function save(destination: Step, advance = false, close = false) {
+  function save(destination: Step, advance = false, close = false, fieldId?: string) {
     if (pending || conflict) return;
     setMessage("");
     start(async () => {
@@ -75,13 +86,13 @@ export function DraftEditor(props: Props) {
         if (!result.ok) {
           setErrors(result.errors ?? {}); setConflict(!!result.conflict); setMessage(result.message);
           const first = Object.keys(result.errors ?? {})[0];
-          if (first) requestAnimationFrame(() => document.getElementById(first)?.focus());
+          if (first) requestAnimationFrame(() => heading.current?.closest(".workspace-current")?.querySelector<HTMLElement>("#" + CSS.escape(first))?.focus());
           return;
         }
         setErrors({}); setDirty(false); setRevision(result.revision);
         setDates({ saved: result.updatedAt, expiry: result.expiresAt }); setMessage("已保存草稿。");
         if (close) router.push("/applications");
-        else if (destination !== step) router.push(`/applications/${id}/${destination}`);
+        else if (destination !== step) router.push(`/applications/${id}/${destination}` + (fieldId ? "#" + encodeURIComponent(fieldId) : ""));
       } catch { setMessage("未能确认保存结果。请检查网络连接，保留当前页面后重试。"); }
     });
   }
@@ -126,6 +137,8 @@ export function DraftEditor(props: Props) {
           {step === "templates" && <TemplateEditor answers={answers} templates={templates} onChange={(kind, entry) => {
             setTemplates((current) => ({...current, [kind]: entry})); changed();
           }} />}
+          {step === "review" && <WorkspaceReview answers={answers} files={files} notes={notes} templates={templates} onEdit={(target, fieldId) => save(target, false, false, fieldId)} />}
+          {step === "aftercare" && <Aftercare />}
         </div>
         {actionBar}
       </>}

@@ -5,7 +5,7 @@ import { NewDraft, DraftControls } from "@/components/workspace/dashboard-contro
 import { formatDate } from "@/components/workspace/editor-types";
 import { STEP_LABELS } from "@/lib/workspace/model";
 
-export const metadata = { title: "我的草稿 | VBER" };
+export const metadata = { title: "我的草稿" };
 
 export default async function ApplicationsPage() {
   const { userId } = await auth.protect();

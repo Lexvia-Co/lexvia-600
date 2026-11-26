@@ -21,6 +21,8 @@ test("partial identity answers round trip and validation respects a single passp
   deepEqual(validateStep("identity", answers, today), {});
   ok(validateStep("identity", { ...answers, birthDate: "2008-11-27" }, today).birthDate);
   ok(validateStep("identity", { ...answers, birthDate: "2005-02-30" }, today).birthDate);
+  ok(validateStep("identity", { ...answers, birthDate: "2006-03-01" }, new Date("2024-02-29T01:00:00Z")).birthDate);
+  deepEqual(validateStep("identity", answers, new Date("2026-11-25T16:01:00Z")), {});
 });
 
 test("only guests receive host questions and planned dates must be in order", () => {

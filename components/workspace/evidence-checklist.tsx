@@ -40,7 +40,7 @@ export function EvidenceChecklist({ applicationId, answers, files, notes, onChan
     <p className="workspace-meta">文件保存在你的私人草稿中，当前保留至 {expiry}。主动继续准备或成功修改后，保存期重新计算为 90 天。你可以在下方移除单个文件，也可以在「我的草稿」删除整份申请。</p>
     <p className="workspace-progress-label">已为 {count} / {rules.length} 项添加文件或说明</p>
     {rules.map((rule) => <details className="workspace-item" key={rule.key}>
-      <summary>{rule.title}<span className="workspace-meta">{evidenceStatus(files[rule.key], notes[rule.key])}</span></summary>
+      <summary id={`evidence-${rule.key}`}>{rule.title}<span className="workspace-meta">{evidenceStatus(files[rule.key], notes[rule.key])}</span></summary>
       <div className="workspace-stack"><p>{rule.description}</p>
         <p className="workspace-meta"><a href={rule.source}>Home Affairs 指引</a> · 核对日期 {rule.reviewed}</p>
         {contents(rule.key)}

@@ -4,15 +4,14 @@ import { getApplication } from "@/data/applications";
 import { DraftEditor } from "@/components/workspace/draft-editor";
 import type { GroupedFiles } from "@/components/workspace/evidence-checklist";
 import { buildEvidenceFile } from "@/lib/workspace/storage";
-import { STEP_FIELDS, type Step } from "@/lib/workspace/model";
+import { STEP_FIELDS, STEPS } from "@/lib/workspace/model";
 
-export const metadata = { title: "申请准备工作区 | VBER" };
+export const metadata = { title: "申请准备工作区" };
 
 export default async function DraftPage({ params }: { params: Promise<{id: string; step: string}> }) {
   const { userId } = await auth.protect();
   const {id, step: routeStep} = await params;
-  const available: Step[] = ["identity", "visit", "funding", "evidence", "templates"];
-  const step = available.find((value) => value === routeStep);
+  const step = STEPS.find((value) => value === routeStep);
   if (!step) notFound();
   const draft = await getApplication(userId, id);
   if (!draft) notFound();

@@ -27,7 +27,7 @@ Resolve the Clerk identity on the server. Start private reads in Server Componen
 
 Store PDF, JPEG, and PNG files in the private Neon assets bucket. Reserve storage before issuing a short-lived URL. Upload to staging, check the actual bytes, and publish exactly the verified content. Use retry-safe identifiers, bounded file and draft quotas, and short-lived owner-authorized downloads. Keep readable filenames in metadata and opaque keys in storage.
 
-Show the retention terms before uploading. Deliberately resuming or successfully editing a draft renews its **90-day inactivity period**. At expiry or manual deletion, block new access immediately. Schedule a Neon Function to remove expired drafts, abandoned uploads and stored files, retrying failed cleanup. Record operational counts and failure categories without applicant details, filenames, signed URLs, or document content.
+Show the retention terms before uploading. Deliberately resuming or successfully editing a draft renews its **90-day inactivity period**. At expiry or manual deletion, block new access immediately. A download link already issued before manual deletion may still work until its signature expires, for at most 60 seconds. Schedule a Neon Function to remove expired drafts, abandoned uploads and stored files, retrying failed cleanup. Record operational counts and failure categories without applicant details, filenames, signed URLs, or document content.
 
 ## Milestones and release checks
 

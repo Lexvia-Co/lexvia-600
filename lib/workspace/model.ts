@@ -64,9 +64,12 @@ export function validateStep(step: Step, answers: Answers, today = new Date()): 
     if (!answers.givenNames.trim() && !answers.familyName.trim()) errors.familyName = "请按护照填写姓名。";
     if (answers.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(answers.email.trim())) errors.email = "请检查邮箱地址。";
     if (answers.birthDate) {
-      const cutoff = new Date(Date.UTC(today.getUTCFullYear() - 18, today.getUTCMonth(), today.getUTCDate()));
+      const localDate = new Intl.DateTimeFormat("sv-SE", {
+        timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit",
+      }).format(today);
+      const cutoff = String(Number(localDate.slice(0, 4)) - 18) + localDate.slice(4);
       if (!validDate(answers.birthDate)) errors.birthDate = "请输入有效的出生日期。";
-      else if (answers.birthDate > cutoff.toISOString().slice(0, 10)) errors.birthDate = "本工作区供年满 18 岁的申请人准备自己的申请。";
+      else if (answers.birthDate > cutoff) errors.birthDate = "本工作区供年满 18 岁的申请人准备自己的申请。";
     }
     if (answers.passportExpiry && !validDate(answers.passportExpiry)) errors.passportExpiry = "请输入有效的日期。";
   }
@@ -132,7 +135,7 @@ export function templateText(kind: TemplateKind, a: Answers): string {
   ].join("\n\n");
 }
 
-// The saved template can be compared exactly with a regeneration from current answers.
+// A content fingerprint flags source changes without storing a second copy of the letter.
 export function templateFingerprint(kind: TemplateKind, answers: Answers): string {
   const text = templateText(kind, answers);
   let hash = 2166136261;
