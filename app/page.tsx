@@ -30,7 +30,7 @@ export default function Home() {
           </p>
           <h1 id="home-title">准备你的<wbr /><span>澳大利亚访客签证</span></h1>
           <p className="home-summary">
-            想去澳大利亚旅游或探亲访友？在这里用中文填写行程、准备材料，再到 <span lang="en">ImmiAccount</span> 递交申请。
+            想去澳大利亚旅游或探亲访友？在这里用中文填写行程、准备材料，再到 <a href={OFFICIAL.immi} lang="en" className="underline underline-offset-4">ImmiAccount</a> 递交申请。
           </p>
           <div className="home-actions">
             <Button asChild size="lg">

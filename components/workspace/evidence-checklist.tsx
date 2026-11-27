@@ -47,7 +47,7 @@ export function EvidenceChecklist({ applicationId, answers, files, notes, onChan
     {rules.map((rule) => <details className="workspace-item" key={rule.key}>
       <summary id={`evidence-${rule.key}`}>{rule.title}<span className="workspace-meta">{evidenceStatus(files[rule.key], notes[rule.key])}</span></summary>
       <div className="workspace-stack"><p>{rule.description}</p>
-        <p className="workspace-meta"><a href={rule.source}>Home Affairs 指引</a> · 核对日期 {rule.reviewed}</p>
+        <p className="workspace-meta"><a href={rule.source}>Home Affairs 指引</a></p>
         {contents(rule.key)}
       </div>
     </details>)}

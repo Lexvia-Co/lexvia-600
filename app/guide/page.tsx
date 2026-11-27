@@ -1,4 +1,4 @@
-import { OFFICIAL, GUIDE_VERSION } from "@/lib/workspace/model";
+import { OFFICIAL } from "@/lib/workspace/model";
 import { ScopeCheck } from "./scope-check";
 export const metadata = { title: "赴澳旅游或探亲访友申请指南" };
 
@@ -16,8 +16,7 @@ export default function GuidePage() {
         <h3>官方信息</h3>
         <a className="text-link" href={OFFICIAL.stream}>申请条件、费用和审理时间 ↗</a>
         <a className="text-link" href={OFFICIAL.visitor}>访客签证材料示例 ↗</a>
-        <a className="text-link" href={OFFICIAL.attachments}>ImmiAccount 文件上传说明 ↗</a>
-        <small>最近核对于 {GUIDE_VERSION}</small>
+        <a className="text-link" href={OFFICIAL.attachments}>如何上传申请材料 ↗</a>
       </aside>
     </div>
   </main>;

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ANSWER_STEPS } from "@/lib/workspace/step-progress";
-import { ANSWER_LABELS, EVIDENCE_LABELS, OFFICIAL, STEP_LABELS, TEMPLATE_LABELS, TEMPLATE_REVIEW_NOTICE, templateFingerprint, validateStep,
+import { ANSWER_LABELS, EVIDENCE_LABELS, STEP_LABELS, TEMPLATE_LABELS, TEMPLATE_REVIEW_NOTICE, templateFingerprint, validateStep,
   type Answers, type Step, type TemplateKind } from "@/lib/workspace/model";
 import { answerDisplay, visibleFields } from "./answer-fields";
 import { checklistGroups, evidenceStatus, type GroupedFiles } from "./evidence-checklist";
@@ -64,7 +64,6 @@ export function WorkspaceReview({ answers, files, notes, templates, onEdit }: {
     <section className="workspace-notice no-print"><h2>递交申请</h2>
       <p>打开 ImmiAccount，按里面的清单填写答案、上传文件，再缴费递交。回来后，你还可以修改这份草稿。</p>
       <div className="workspace-actions">
-        <Button asChild><a href={OFFICIAL.immi} target="_blank" rel="noreferrer">前往 ImmiAccount（新窗口）</a></Button>
         <Button type="button" variant="outline" onClick={() => window.print()}>打印准备摘要</Button>
       </div>
     </section>
@@ -77,7 +76,8 @@ export function Aftercare() {
     <section><h2>收到补件通知</h2><p>在通知中核对所需材料、提交方式和截止日期，按通知要求在 ImmiAccount 操作。</p></section>
     <section><h2>体检与生物识别</h2><p>如果 Home Affairs 要求你体检或提供生物识别信息，请按来信中的步骤安排。</p></section>
     <section><h2>收到决定</h2><p>阅读决定通知。如获签，请核对准签信中列出的有效期、可停留时间及签证条件。</p></section>
-    <div className="workspace-actions"><Button asChild><a href={OFFICIAL.immi}>打开 ImmiAccount</a></Button>
-      <Button asChild variant="outline"><a href="https://immi.homeaffairs.gov.au/help-support/applying-online-or-on-paper/online/after-you-apply">查看 Home Affairs 递交后指引</a></Button></div>
+    <div className="workspace-actions">
+      <Button asChild variant="outline"><a href="https://immi.homeaffairs.gov.au/help-support/applying-online-or-on-paper/online/after-you-apply">查看 Home Affairs 递交后指引</a></Button>
+    </div>
   </div>;
 }
