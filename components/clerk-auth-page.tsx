@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
+import styles from "./clerk-auth-page.module.css";
 
 export function ClerkAuthPage({ label, children }: { label: string; children: ReactNode }) {
   const page = useRef<HTMLElement>(null);
@@ -24,5 +25,5 @@ export function ClerkAuthPage({ label, children }: { label: string; children: Re
     return () => observer.disconnect();
   }, []);
 
-  return <main ref={page} aria-label={label} className="auth-page">{children}</main>;
+  return <main ref={page} aria-label={label} className={styles.page}>{children}</main>;
 }

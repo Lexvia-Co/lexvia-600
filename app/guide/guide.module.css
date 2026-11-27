@@ -1,0 +1,152 @@
+.guide {
+  padding-block: clamp(2.5rem, 5vw, 5rem) clamp(3.5rem, 7vw, 7rem);
+}
+
+.introduction {
+  padding-block-end: clamp(2rem, 4vw, 3.5rem);
+  border-block-end: 1px solid var(--border);
+}
+
+.introduction p:last-child {
+  max-inline-size: 44rem;
+  margin-block-end: 0;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(2rem, 6vw, 5.75rem);
+  padding-block-start: clamp(1.5rem, 3.5vw, 3.25rem);
+}
+
+.scope {
+  min-inline-size: 0;
+  padding: clamp(1.25rem, 3.3vw, 2.75rem);
+  border: 1px solid var(--border);
+  border-radius: .55rem;
+  background: var(--surface);
+}
+
+.scope h2,
+.notes h2 {
+  color: var(--foreground);
+  font-family: var(--font-editorial);
+  font-size: clamp(1.45rem, 2.2vw, 2rem);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.instructions,
+.notes p {
+  color: var(--muted-foreground);
+  line-height: 1.85;
+}
+
+.instructions {
+  margin-block: .45rem 2rem;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+}
+
+.choice {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  min-block-size: 2.75rem;
+  padding: .5rem .85rem;
+  border: 1px solid var(--border);
+  border-radius: .3rem;
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.choice input {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--primary);
+}
+
+.choice:hover,
+.choice:has(:checked) {
+  border-color: var(--input);
+  background: var(--secondary);
+}
+
+.choice:has(:checked) {
+  border-color: var(--primary);
+}
+
+.choice:has(:focus-visible) {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.result:not(:empty) {
+  display: grid;
+  justify-items: start;
+  gap: .85rem;
+  margin-block-start: 1.75rem;
+  padding-block-start: 1.25rem;
+  border-block-start: 1px solid var(--border);
+  line-height: 1.75;
+}
+
+.notes {
+  min-inline-size: 0;
+  padding-block-start: .55rem;
+}
+
+.notes p {
+  margin-block-start: 1rem;
+}
+
+.notes h3 {
+  margin-block: 2rem .55rem;
+  font-size: .875rem;
+  font-weight: 650;
+}
+
+.resources {
+  border-block-start: 1px solid var(--border);
+}
+
+.resources li {
+  border-block-end: 1px solid var(--border);
+}
+
+.resources a {
+  display: flex;
+  min-height: 2.9rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding-block: .65rem;
+  color: var(--primary);
+  font-size: .95rem;
+}
+
+.resources a:hover {
+  text-decoration: underline;
+  text-underline-offset: .22em;
+}
+
+.resources a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.resources a span {
+  color: var(--muted-foreground);
+}
+
+@media (max-width: 48rem) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

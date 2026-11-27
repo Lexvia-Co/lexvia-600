@@ -1,0 +1,51 @@
+.page {
+  --clerk-color-background: var(--surface);
+  --clerk-color-foreground: var(--foreground);
+  --clerk-color-primary: var(--primary);
+  --clerk-color-primary-foreground: var(--primary-foreground);
+  --clerk-color-muted: var(--secondary);
+  --clerk-color-muted-foreground: var(--muted-foreground);
+  --clerk-color-input: var(--surface);
+  --clerk-color-input-foreground: var(--foreground);
+  --clerk-color-border: var(--border);
+  --clerk-color-ring: var(--ring);
+  --clerk-color-danger: var(--destructive);
+  --clerk-border-radius: .35rem;
+  --clerk-font-family: var(--font-sans);
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  justify-items: center;
+  min-inline-size: 0;
+  padding: clamp(2.25rem, 10vh, 6.5rem) 1rem;
+}
+
+.page :global(.cl-rootBox),
+.page :global(.cl-cardBox) {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.page :global(.cl-cardBox) {
+  border: 1px solid var(--border);
+  border-radius: .65rem;
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.page :global(.cl-headerTitle) {
+  font-family: var(--font-editorial);
+  font-size: clamp(1.45rem, 3vw, 1.85rem);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.page :global(.cl-formFieldInput:not([aria-invalid=true])) {
+  border: 1px solid var(--input);
+}
+
+.page :global(.cl-formFieldInput:focus-visible) {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}

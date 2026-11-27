@@ -1,0 +1,148 @@
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.02fr);
+  align-items: center;
+  gap: clamp(2rem, 4vw, 4rem);
+  padding-block: clamp(2.75rem, 5vw, 4.75rem);
+}
+.heroCopy { min-width: 0; container-type: inline-size; }
+.headline {
+  margin-block: clamp(1.1rem, 2vw, 1.8rem) 1.25rem;
+  font: 600 clamp(2.15rem, 11.45cqw, 4.35rem)/1.21 var(--font-editorial);
+  letter-spacing: -.055em;
+}
+.headline span { display: block; }
+.summary {
+  max-width: 29em;
+  color: var(--muted-foreground);
+  font-size: clamp(1rem, 1.15vw, 1.11rem);
+  line-height: 1.95;
+  text-wrap: pretty;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .65rem;
+  margin-block-start: clamp(1.4rem, 2.4vw, 2rem);
+}
+.actions a { min-height: 2.85rem; height: auto; min-width: min(8.8rem, 100%); max-width: 100%; white-space: normal; }
+.actions a span { font-size: 1.15em; }
+.postcard {
+  width: 100%;
+  height: auto;
+  border-radius: 3px;
+  background: var(--secondary);
+}
+
+.process {
+  padding-block: clamp(2rem, 3vw, 3rem) clamp(2.75rem, 5vw, 4.5rem);
+  border-top: 1px solid var(--border);
+}
+.sectionTitle {
+  font: 600 clamp(1.65rem, 2.25vw, 2.15rem)/1.4 var(--font-editorial);
+  letter-spacing: -.045em;
+}
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.25rem, 3vw, 3rem);
+  margin-top: clamp(1.25rem, 2vw, 1.875rem);
+}
+.steps li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: start;
+  gap: clamp(.8rem, 1.35vw, 1.4rem);
+  padding-block-start: 1rem;
+  border-top: 1px solid var(--border);
+}
+.stepNumber {
+  color: var(--muted-foreground);
+  font: italic 400 clamp(1.8rem, 2.35vw, 2.5rem)/1 Georgia, serif;
+  letter-spacing: -.06em;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.steps h3 { font-size: 1.1rem; font-weight: 600; line-height: 1.6; }
+.steps p, .exampleCopy p {
+  margin-block-start: .5rem;
+  color: var(--muted-foreground);
+  font-size: .9375rem;
+  line-height: 1.85;
+}
+
+.example {
+  background: var(--secondary);
+  border-top: 1px solid var(--border);
+}
+.exampleLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.02fr);
+  align-items: center;
+  gap: clamp(1.75rem, 4vw, 4rem);
+  padding-block: clamp(2.25rem, 5vw, 4.75rem);
+}
+.exampleCopy p { max-width: 26em; }
+.exampleCopy a { display: inline-block; margin-top: 1.25rem; font-size: .9rem; }
+.files {
+  position: relative;
+  padding: .5rem clamp(1rem, 2.8vw, 2rem);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--surface);
+}
+.files::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  bottom: 100%;
+  width: 21%;
+  height: .48rem;
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: 3px 6px 0 0;
+  background: var(--surface);
+}
+.fileRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .75rem;
+  padding-block: 1.15rem;
+  font-size: .95rem;
+  overflow-wrap: anywhere;
+}
+.fileRow small { color: var(--muted-foreground); font-size: .78rem; }
+.fileIcon {
+  position: relative;
+  width: .95rem;
+  height: 1.2rem;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  color: var(--muted-foreground);
+}
+.fileIcon::after {
+  content: "";
+  position: absolute;
+  inset: 35% 20% auto;
+  height: .26rem;
+  border-block: 1px solid currentColor;
+}
+.translation { padding-inline-start: 1.5rem; border-top: 1px solid var(--border); }
+
+@media (max-width: 50rem) {
+  .hero, .exampleLayout { grid-template-columns: minmax(0, 1fr); }
+  .hero { gap: 2rem; }
+  .headline { font-size: clamp(2rem, 11.6cqw, 3.8rem); }
+  .summary { max-width: 34em; }
+  .steps { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
+  .steps li { gap: 1.4rem; }
+  .exampleLayout { gap: 2.5rem; }
+}
+
+@media (max-width: 26rem) {
+  .hero { padding-block: 2.25rem; }
+  .actions a { min-width: 0; padding-inline: 1rem; }
+  .translation { padding-inline-start: .6rem; }
+  .fileRow { gap: .55rem; }
+}

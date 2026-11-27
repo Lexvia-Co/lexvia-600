@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FieldGroup, FieldLegend, FieldSet } from "@/components/ui/field";
 import { OFFICIAL } from "@/lib/workspace/model";
 import { isTripPurpose, TRIP_PURPOSES } from "@/lib/workspace/draft-start";
+import styles from "./guide.module.css";
 
 const questions = [
   { id: "age", title: "你是否已年满 18 岁？", choices: [["adult", "已满 18 岁"], ["minor", "未满 18 岁"]] },
@@ -20,18 +21,18 @@ export function ScopeCheck() {
   const [selection, setSelection] = useState<Selection>({});
   const complete = questions.every(({id}) => Boolean(selection[id]));
   const inScope = selection.age === "adult" && selection.location === "offshore" && isTripPurpose(selection.purpose);
-  return <section className="scope-card" aria-labelledby="scope-heading">
+  return <section className={styles.scope} aria-labelledby="scope-heading">
     <h2 id="scope-heading">这份指南适合你吗？</h2>
-    <p className="muted mt-2 mb-7">先回答三个问题，无需填写姓名或联系方式。</p>
+    <p className={styles.instructions}>先回答三个问题，无需填写姓名或联系方式。</p>
     <FieldGroup>
       {questions.map(question => <FieldSet key={question.id} className="gap-3">
         <FieldLegend variant="label">{question.title}</FieldLegend>
-        <div className="scope-choices">{question.choices.map(([value, label]) =>
-          <label className="scope-choice" key={value}><input type="radio" name={question.id} value={value}
+        <div className={styles.choices}>{question.choices.map(([value, label]) =>
+          <label className={styles.choice} key={value}><input type="radio" name={question.id} value={value}
             checked={selection[question.id] === value} onChange={() => setSelection(previous => ({...previous, [question.id]: value}))} />{label}</label>)}</div>
       </FieldSet>)}
     </FieldGroup>
-    <div aria-live="polite" className="scope-result">
+    <div aria-live="polite" className={styles.result}>
       {inScope && <><p>你可以在 VBER 准备这次行程的申请材料。</p><Button asChild>
         <Link href={`/applications/new?purpose=${selection.purpose}`} prefetch={false}>{isSignedIn ? "开始准备" : "登录后开始准备"}</Link>
       </Button></>}
