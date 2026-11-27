@@ -1,0 +1,30 @@
+name: Sync company main
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-company-main
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'sibo-zhang25/lexvia-600'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Push main to the company repository
+        env:
+          GH_TOKEN: ${{ secrets.COMPANY_SYNC_TOKEN }}
+        run: |
+          gh auth setup-git
+          git push https://github.com/Lexvia-Co/lexvia-600.git HEAD:refs/heads/main
