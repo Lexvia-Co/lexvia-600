@@ -10,6 +10,7 @@ import {
   EVIDENCE_LABELS, MAX_TEMPLATE_LENGTH, STEP_FIELDS, STEPS, TEMPLATE_LABELS, normalizeAnswers, validateStep,
 } from "@/lib/workspace/model";
 import { isDocumentId } from "@/lib/workspace/storage-policy";
+import { isTripPurpose, type TripPurpose } from "@/lib/workspace/draft-start";
 
 const invalid = { ok: false as const, message: "提交的信息有误，请检查后重试。" };
 
@@ -18,7 +19,7 @@ function mutationError(error: unknown, operation: "create" | "resume" | "delete"
   const reason = code === "conflict" || code === "unavailable" ? code : "write_failed";
   console.warn("workspace_mutation_failed", { operation, reason });
   if (code === "conflict") {
-    return { ok: false as const, conflict: true, message: "另一处已保存了更新。请先复制要保留的内容，再重新载入草稿。" };
+    return { ok: false as const, conflict: true, message: "这份草稿在别处更新过。请先复制想保留的内容，再打开最新版。" };
   }
   if (code === "unavailable") {
     return { ok: false as const, message: "这份草稿已过期或无法访问。请返回我的草稿查看。" };
@@ -30,11 +31,11 @@ function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export async function createDraft(scopeConfirmed: boolean) {
+export async function createDraft(scopeConfirmed: boolean, purpose?: TripPurpose) {
   const { userId } = await auth.protect();
-  if (scopeConfirmed !== true) return invalid;
+  if (scopeConfirmed !== true || (purpose !== undefined && !isTripPurpose(purpose))) return invalid;
   try {
-    const id = await createApplication(userId);
+    const id = await createApplication(userId, purpose);
     revalidatePath("/applications");
     return { ok: true as const, id };
   } catch (error) {

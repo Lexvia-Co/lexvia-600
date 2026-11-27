@@ -2,7 +2,8 @@ import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { connection } from "next/server";
 import { listApplications } from "@/data/applications";
-import { NewDraft, DraftControls } from "@/components/workspace/dashboard-controls";
+import { DraftControls } from "@/components/workspace/dashboard-controls";
+import { Button } from "@/components/ui/button";
 import { formatDate } from "@/components/workspace/editor-types";
 import { STEP_LABELS } from "@/lib/workspace/model";
 
@@ -15,10 +16,10 @@ export default async function ApplicationsPage() {
   return <div className="workspace-dashboard">
     <header className="workspace-heading">
       <h1>我的草稿</h1>
-      <p>继续准备你的 Visitor visa (subclass 600)，也可以为新的行程建立一份草稿。</p>
+      <div><Button asChild><Link href="/applications/new" prefetch={false}>新建草稿</Link></Button></div>
     </header>
     <section className="workspace-panel">
-      <h2>已保存的申请</h2>
+      <h2>已保存的草稿</h2>
       {drafts.length ? <ul className="draft-list">
         {drafts.map((draft) => <li key={draft.id}>
           <div>
@@ -28,12 +29,7 @@ export default async function ApplicationsPage() {
           </div>
           <DraftControls id={draft.id} />
         </li>)}
-      </ul> : <p>这里还没有草稿。确认下方的适用范围后，就可以开始填写。</p>}
-    </section>
-    <section className="workspace-panel">
-      <h2>新建草稿</h2>
-      <p>本工作区适用于成年人从澳大利亚境外准备本人的 Tourist stream 旅游或探亲访友申请。你可以先阅读<Link href="/guide">适用范围和准备指南</Link>。</p>
-      <NewDraft />
+      </ul> : <p>你还没有草稿。可以先看看<Link href="/guide">申请指南</Link>，也可以直接新建一份。</p>}
     </section>
   </div>;
 }

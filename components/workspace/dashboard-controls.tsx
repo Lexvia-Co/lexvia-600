@@ -3,32 +3,56 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
 import { createDraft, removeDraft, resumeDraft } from "@/app/applications/actions";
+import { TRIP_PURPOSES, type TripPurpose } from "@/lib/workspace/draft-start";
 
-export function NewDraft() {
+export function NewDraft({ initialPurpose }: { initialPurpose?: TripPurpose }) {
+  const [purpose, setPurpose] = useState(initialPurpose);
+  const [confirmed, setConfirmed] = useState(false);
+  const [attempted, setAttempted] = useState(false);
   const [message, setMessage] = useState("");
   const [pending, start] = useTransition();
   const router = useRouter();
-  return <form method="post" className="workspace-stack" onSubmit={(event) => {
+  return <form method="post" noValidate className="workspace-panel" onSubmit={(event) => {
     event.preventDefault();
-    const checkbox = event.currentTarget.elements.namedItem("scope");
-    const scope = checkbox instanceof HTMLInputElement && checkbox.checked;
-    if (!scope) {
-      setMessage("请先确认这份草稿适合你的申请。");
+    setAttempted(true);
+    setMessage("");
+    if (!confirmed) {
+      event.currentTarget.querySelector<HTMLInputElement>("#confirm-applicant")?.focus();
       return;
     }
     start(async () => {
       try {
-        const result = await createDraft(scope);
-        if (result.ok) router.push(`/applications/${result.id}/identity`);
+        const result = await createDraft(confirmed, purpose);
+        if (result.ok) router.replace(`/applications/${result.id}/identity`);
         else setMessage(result.message);
       } catch { setMessage("未能创建草稿，请重试。"); }
     });
   }}>
-    <label className="workspace-choice"><input type="checkbox" name="scope" onChange={() => setMessage("")} />
-      我已年满 18 岁，目前在澳大利亚境外，准备为自己申请赴澳旅游或探亲访友。</label>
-    <p className="workspace-meta">草稿和上传的文件从上次主动继续或成功修改起保留 90 天。你也可以提前删除。</p>
-    <div><Button type="submit" disabled={pending}>{pending ? "正在创建…" : "创建私人草稿"}</Button></div>
+    <FieldGroup>
+      <FieldSet>
+        <FieldLegend variant="label">这次去澳大利亚主要是为了什么？（选填）</FieldLegend>
+        <div className="workspace-choices">
+          {(["holiday", "visit"] as const).map((value) => <label className="workspace-choice" key={value}>
+            <input type="radio" id={`purpose-${value}`} name="purpose" value={value}
+              checked={purpose === value} onChange={() => setPurpose(value)} />
+            {TRIP_PURPOSES[value]}
+          </label>)}
+        </div>
+      </FieldSet>
+      <Field data-invalid={attempted && !confirmed}>
+        <FieldLabel htmlFor="confirm-applicant" className="workspace-choice">
+          <input type="checkbox" id="confirm-applicant" name="scope" required checked={confirmed}
+            onChange={(event) => setConfirmed(event.target.checked)} aria-invalid={attempted && !confirmed}
+            aria-describedby={attempted && !confirmed ? "confirmation-error" : undefined} />
+          我已年满 18 岁，目前在澳大利亚境外，正在为自己准备赴澳旅游或探亲访友的申请。
+        </FieldLabel>
+        {attempted && !confirmed && <FieldError id="confirmation-error">请先确认你在为自己准备申请，并且符合上述条件。</FieldError>}
+      </Field>
+      <FieldDescription>每次继续填写或保存修改，草稿和文件都会再保留 90 天。你也可以随时删除。</FieldDescription>
+    </FieldGroup>
+    <div><Button type="submit" disabled={pending}>{pending ? "正在创建…" : "创建草稿"}</Button></div>
     {message && <p role="alert">{message}</p>}
   </form>;
 }

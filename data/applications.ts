@@ -2,6 +2,7 @@ import "server-only";
 import { and, asc, desc, eq, gt } from "drizzle-orm";
 import { getDatabase } from "../lib/neon/database";
 import { emptyAnswers, GUIDE_VERSION, normalizeAnswers, type Answers, type Step, type TemplateKind } from "../lib/workspace/model";
+import type { TripPurpose } from "../lib/workspace/draft-start";
 import { applicantDetails, applications, documents, evidenceItems, type SavedTemplate } from "../src/db/schema";
 import { discardApplication, lockApplication, newExpiry, ownedDraft, validId, WorkspaceError } from "./workspace-state";
 export { WorkspaceError } from "./workspace-state";
@@ -41,11 +42,11 @@ export async function getApplication(ownerId: string, id: string) {
 export type ApplicationDetail = NonNullable<Awaited<ReturnType<typeof getApplication>>>;
 export type ApplicationSummary = Awaited<ReturnType<typeof listApplications>>[number];
 
-export async function createApplication(ownerId: string) {
+export async function createApplication(ownerId: string, purpose: TripPurpose | "" = "") {
   return getDatabase().transaction(async tx => {
     const [row] = await tx.insert(applications).values({ ownerId, guideVersion: GUIDE_VERSION,
       expiresAt: newExpiry(new Date()) }).returning({ id: applications.id });
-    await tx.insert(applicantDetails).values({ ownerId, applicationId: row.id, answers: emptyAnswers() });
+    await tx.insert(applicantDetails).values({ ownerId, applicationId: row.id, answers: { ...emptyAnswers(), purpose } });
     return row.id;
   });
 }

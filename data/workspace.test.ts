@@ -44,7 +44,7 @@ async function reserve(draftId: string, input = upload()) {
 }
 
 test("save, resume, revision conflicts and owner isolation", async () => {
-  const id = await createApplication(owner);
+  const id = await createApplication(owner, "visit");
   assert.equal(await getApplication(other, id), null);
   assert.deepEqual(await listApplications(other), []);
   await assert.rejects(renewApplication(other, id), { code: "unavailable" });
@@ -52,6 +52,7 @@ test("save, resume, revision conflicts and owner isolation", async () => {
   await assert.rejects(saveApplication(other, id, 1, { lastStep: "identity" }), { code: "unavailable" });
   const original = await getApplication(owner, id);
   assert.ok(original);
+  assert.equal(original.answers.purpose, "visit");
   const saves = await Promise.allSettled(["FIRST", "SECOND"].map(givenNames =>
     saveApplication(owner, id, original.revision, { lastStep: "visit", answers: { givenNames } })));
   assert.equal(saves.filter(save => save.status === "fulfilled").length, 1);
