@@ -4,7 +4,6 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { createDraft, removeDraft, resumeDraft } from "@/app/applications/actions";
-import type { Step } from "@/lib/workspace/model";
 
 export function NewDraft() {
   const [message, setMessage] = useState("");
@@ -34,7 +33,7 @@ export function NewDraft() {
   </form>;
 }
 
-export function DraftControls({ id, step }: { id: string; step: Step }) {
+export function DraftControls({ id }: { id: string }) {
   const router = useRouter();
   const [confirm, setConfirm] = useState(false);
   const [message, setMessage] = useState("");
@@ -44,8 +43,8 @@ export function DraftControls({ id, step }: { id: string; step: Step }) {
       try {
         const result = deleting ? await removeDraft(id) : await resumeDraft(id);
         if (!result.ok) return setMessage(result.message);
-        if (deleting) router.refresh();
-        else router.push(`/applications/${id}/${step}`);
+        if ("lastStep" in result) router.push(`/applications/${id}/${result.lastStep}`);
+        else router.refresh();
       } catch { setMessage("操作未能完成，请重试。"); }
     });
   }

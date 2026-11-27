@@ -84,9 +84,10 @@ export async function saveApplication(ownerId: string, id: string, revision: num
 export async function renewApplication(ownerId: string, id: string) {
   return getDatabase().transaction(async tx => {
     await lockApplication(tx, ownerId, id);
-    const expiresAt = newExpiry(new Date());
-    await tx.update(applications).set({ expiresAt }).where(ownedDraft(ownerId, id));
-    return expiresAt;
+    const [resumed] = await tx.update(applications).set({ expiresAt: newExpiry(new Date()) })
+      .where(ownedDraft(ownerId, id))
+      .returning({ lastStep: applications.lastStep, expiresAt: applications.expiresAt });
+    return resumed;
   });
 }
 

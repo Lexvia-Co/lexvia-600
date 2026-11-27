@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
+import { connection } from "next/server";
 import { listApplications } from "@/data/applications";
 import { NewDraft, DraftControls } from "@/components/workspace/dashboard-controls";
 import { formatDate } from "@/components/workspace/editor-types";
@@ -8,6 +9,7 @@ import { STEP_LABELS } from "@/lib/workspace/model";
 export const metadata = { title: "我的草稿" };
 
 export default async function ApplicationsPage() {
+  await connection();
   const { userId } = await auth.protect();
   const drafts = await listApplications(userId);
   return <div className="workspace-dashboard">
@@ -24,7 +26,7 @@ export default async function ApplicationsPage() {
             <p>上次停在「{STEP_LABELS[draft.lastStep]}」</p>
             <p className="workspace-meta">上次保存于 {formatDate(draft.updatedAt, true)}（北京时间） · 保留至 {formatDate(draft.expiresAt)}</p>
           </div>
-          <DraftControls id={draft.id} step={draft.lastStep} />
+          <DraftControls id={draft.id} />
         </li>)}
       </ul> : <p>这里还没有草稿。确认下方的适用范围后，就可以开始填写。</p>}
     </section>

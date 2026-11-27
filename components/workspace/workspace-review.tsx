@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ANSWER_LABELS, EVIDENCE_LABELS, OFFICIAL, STEP_LABELS, TEMPLATE_LABELS, validateStep,
+import { ANSWER_LABELS, EVIDENCE_LABELS, OFFICIAL, STEP_LABELS, TEMPLATE_LABELS, TEMPLATE_REVIEW_NOTICE, templateFingerprint, validateStep,
   type Answers, type Step, type TemplateKind } from "@/lib/workspace/model";
 import { answerDisplay, visibleFields } from "./answer-fields";
 import { checklistGroups, evidenceStatus, type GroupedFiles } from "./evidence-checklist";
@@ -15,6 +15,7 @@ export function WorkspaceReview({ answers, files, notes, templates, onEdit }: {
   const {rules, inactive} = checklistGroups(answers, notes, files);
   const incomplete = answerSteps.flatMap((step) =>
     Object.entries(validateStep(step, answers)).map(([key, reason]) => ({key, step, reason})));
+  const savedTemplates = Object.entries(templates);
   return <div className="workspace-stack">
     <p>核对个人信息、材料和文稿，再在 ImmiAccount 对照官方清单填写并递交。</p>
     {incomplete.length > 0 && <section className="workspace-notice">
@@ -45,9 +46,19 @@ export function WorkspaceReview({ answers, files, notes, templates, onEdit }: {
     </section>
     <section className="workspace-review-section"><div className="workspace-section-heading"><h3>文书草稿</h3>
       <button type="button" className="workspace-text-button no-print" onClick={() => onEdit("templates")}>修改文书</button></div>
-      {Object.entries(templates).length ? Object.entries(templates).map(([kind, entry]) => <section key={kind} className="workspace-review-item">
-        <h4>{TEMPLATE_LABELS[kind as TemplateKind]}</h4><p className="workspace-prewrap" lang="en">{entry.body || "（空白文稿）"}</p>
-      </section>) : <p>尚未选用文书模板。</p>}
+      {savedTemplates.length ? savedTemplates.map(([key, entry]) => {
+        const kind = key as TemplateKind;
+        return <section key={kind} className="workspace-review-item">
+          <h4>{TEMPLATE_LABELS[kind]}</h4>
+          {entry.fingerprint !== templateFingerprint(kind, answers) && <>
+            <p><strong>{TEMPLATE_REVIEW_NOTICE}</strong></p>
+            <Button type="button" variant="outline" className="no-print" onClick={() => onEdit("templates", kind)}>
+              核对{TEMPLATE_LABELS[kind]}
+            </Button>
+          </>}
+          <p className="workspace-prewrap" lang="en">{entry.body || "（空白文稿）"}</p>
+        </section>;
+      }) : <p>尚未选用文书模板。</p>}
     </section>
     <section className="workspace-notice no-print"><h3>递交申请</h3>
       <p>请在自己的 ImmiAccount 中核对官方清单、录入答案、上传文件、缴费并递交。你的 VBER 草稿仍可继续修改。</p>

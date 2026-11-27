@@ -1,8 +1,9 @@
 import { SignUp } from "@clerk/nextjs";
 import { Suspense } from "react";
+import { ClerkAuthPage } from "@/components/clerk-auth-page";
 
 export const metadata = { title: "注册" };
 
 export default function SignUpPage() {
-  return <main aria-label="注册" className="auth-page"><Suspense fallback={<p role="status">正在打开注册页面…</p>}><SignUp routing="path" path="/sign-up" /></Suspense></main>;
+  return <ClerkAuthPage label="注册"><Suspense fallback={<p role="status">正在打开注册页面…</p>}><SignUp routing="path" path="/sign-up" /></Suspense></ClerkAuthPage>;
 }

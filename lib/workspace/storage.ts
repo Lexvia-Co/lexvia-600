@@ -145,6 +145,8 @@ export async function verifyAndPublish(doc: { id: string; size: number; mediaTyp
   // Publish this exact verified snapshot. A replayed staging PUT cannot alter the final file.
   const encodedName = encodeURIComponent(doc.fileName).replace(/['()*]/g, char => `%${char.charCodeAt(0).toString(16)}`);
   const published = await objectRequest(doc.id, "final", "PUT", bytes, {
+    // Next.js may forward the body as a stream; Neon needs its verified length for this PUT.
+    "content-length": String(bytes.byteLength),
     "content-type": actualType,
     "content-disposition": `attachment; filename="document.${actualType === "image/jpeg" ? "jpg" : actualType.split("/")[1]}"; filename*=UTF-8''${encodedName}`,
     "cache-control": "private, no-store",

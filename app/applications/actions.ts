@@ -7,7 +7,7 @@ import {
 } from "@/data/applications";
 import type { SaveInput, SaveResult } from "@/components/workspace/editor-types";
 import {
-  EVIDENCE_LABELS, STEP_FIELDS, STEPS, TEMPLATE_LABELS, normalizeAnswers, validateStep,
+  EVIDENCE_LABELS, MAX_TEMPLATE_LENGTH, STEP_FIELDS, STEPS, TEMPLATE_LABELS, normalizeAnswers, validateStep,
 } from "@/lib/workspace/model";
 import { isDocumentId } from "@/lib/workspace/storage-policy";
 
@@ -46,9 +46,10 @@ export async function resumeDraft(id: string) {
   const { userId } = await auth.protect();
   if (!isDocumentId(id)) return invalid;
   try {
-    await renewApplication(userId, id);
+    const { lastStep } = await renewApplication(userId, id);
     revalidatePath("/applications");
-    return { ok: true as const };
+    revalidatePath(`/applications/${id}/${lastStep}`);
+    return { ok: true as const, lastStep };
   } catch (error) {
     return mutationError(error, "resume");
   }
@@ -93,7 +94,7 @@ export async function saveDraft(input: SaveInput): Promise<SaveResult> {
   if (templates !== undefined && (step !== "templates" || !record(templates) ||
       Object.entries(templates).some(([key, value]) =>
         !Object.hasOwn(TEMPLATE_LABELS, key) || !record(value) ||
-        typeof value.body !== "string" || value.body.length > 16000 ||
+        typeof value.body !== "string" || value.body.length > MAX_TEMPLATE_LENGTH ||
         typeof value.fingerprint !== "string" || value.fingerprint.length > 128 ||
         Object.keys(value).some((part) => part !== "body" && part !== "fingerprint")))) return invalid;
   try {

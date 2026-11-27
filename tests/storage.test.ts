@@ -53,6 +53,7 @@ test("reserve a bounded staging PUT, then publish only server-checked bytes", as
   t.mock.method(globalThis, "fetch", async (request: Request) => {
     calls.push(`${request.method} ${new URL(request.url).pathname}`);
     if (request.method === "GET") return new Response(pdf);
+    assert.equal(request.headers.get("content-length"), String(pdf.byteLength));
     assert.deepEqual(Buffer.from(await request.arrayBuffer()), pdf);
     assert.equal(request.headers.get("content-type"), "application/pdf");
     assert.match(request.headers.get("content-disposition") ?? "", /^attachment;/);

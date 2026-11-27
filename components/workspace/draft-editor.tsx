@@ -24,13 +24,11 @@ export function DraftEditor(props: Props) {
   const [notes, setNotes] = useState(props.initialNotes);
   const [templates, setTemplates] = useState(props.initialTemplates);
   const [revision, setRevision] = useState(props.revision);
-  const [dates, setDates] = useState({ saved: props.updatedAt, expiry: props.expiresAt });
   const [dirty, setDirty] = useState(false);
   const [message, setMessage] = useState("");
   const [conflict, setConflict] = useState(false);
   const [errors, setErrors] = useState<AnswerErrors>({});
   const [pending, start] = useTransition();
-  const [seenRevision, setSeenRevision] = useState(props.revision);
   const heading = useRef<HTMLHeadingElement>(null);
   const next = STEPS[STEPS.indexOf(step) + 1];
   const fields = STEP_FIELDS[step];
@@ -38,17 +36,13 @@ export function DraftEditor(props: Props) {
 
   // Next may preserve a previously visited step. Adopt the latest server snapshot
   // for a clean form and keep a dirty form's original revision for conflict detection.
-  if (props.revision !== seenRevision) {
-    setSeenRevision(props.revision);
-    if (!dirty) {
-      setAnswers(normalizeAnswers(props.initialAnswers));
-      setNotes(props.initialNotes);
-      setTemplates(props.initialTemplates);
-      setRevision(props.revision);
-      setDates({ saved: props.updatedAt, expiry: props.expiresAt });
-      setErrors({});
-      setConflict(false);
-    }
+  if (!dirty && props.revision > revision) {
+    setAnswers(normalizeAnswers(props.initialAnswers));
+    setNotes(props.initialNotes);
+    setTemplates(props.initialTemplates);
+    setRevision(props.revision);
+    setErrors({});
+    setConflict(false);
   }
 
   useEffect(() => {
@@ -90,7 +84,7 @@ export function DraftEditor(props: Props) {
           return;
         }
         setErrors({}); setDirty(false); setRevision(result.revision);
-        setDates({ saved: result.updatedAt, expiry: result.expiresAt }); setMessage("已保存草稿。");
+        setMessage("已保存草稿。");
         if (close) router.push("/applications");
         else if (destination !== step) router.push(`/applications/${id}/${destination}` + (fieldId ? "#" + encodeURIComponent(fieldId) : ""));
       } catch { setMessage("未能确认保存结果。请检查网络连接，保留当前页面后重试。"); }
@@ -100,7 +94,7 @@ export function DraftEditor(props: Props) {
     if (dirty) save(step, false, true);
     else router.push("/applications");
   }
-  const actionBar = <div className="workspace-actions no-print">
+  const actionBar = <div className="workspace-actions workspace-step-actions no-print">
     {!finalStep && <Button type="button" variant="outline" disabled={pending || conflict} onClick={() => save(step)}>保存草稿</Button>}
     {next && <Button type={fields.length ? "submit" : "button"} disabled={pending || conflict}
       onClick={fields.length ? undefined : () => save(next, true)}>保存并继续</Button>}
@@ -120,7 +114,7 @@ export function DraftEditor(props: Props) {
       <header className="workspace-heading">
         <p className="workspace-meta no-print">第 {STEPS.indexOf(step) + 1} 步 / 共 {STEPS.length} 步</p>
         <h1 ref={heading} tabIndex={-1}>{STEP_LABELS[step]}</h1>
-        <p className="workspace-meta">上次保存于 {formatDate(dates.saved, true)}（北京时间） · 保留至 {formatDate(dates.expiry)}</p>
+        <p className="workspace-meta">上次保存于 {formatDate(props.updatedAt, true)}（北京时间） · 保留至 {formatDate(props.expiresAt)}</p>
       </header>
       {fields.length ? <form className="workspace-stack" noValidate method="post" onSubmit={(event) => { event.preventDefault(); if (next) save(next, true); }}>
         <fieldset disabled={pending} className="workspace-form-fields"><legend className="sr-only">{STEP_LABELS[step]}</legend>
@@ -133,7 +127,7 @@ export function DraftEditor(props: Props) {
       </form> : <>
         <div inert={pending}>
           {step === "evidence" && <EvidenceChecklist applicationId={id} answers={answers} files={files} notes={notes}
-            expiry={formatDate(dates.expiry)} onChange={(key, value) => { setNotes((current) => ({...current, [key]: value})); changed(); }} />}
+            expiry={formatDate(props.expiresAt)} onChange={(key, value) => { setNotes((current) => ({...current, [key]: value})); changed(); }} />}
           {step === "templates" && <TemplateEditor answers={answers} templates={templates} onChange={(kind, entry) => {
             setTemplates((current) => ({...current, [kind]: entry})); changed();
           }} />}

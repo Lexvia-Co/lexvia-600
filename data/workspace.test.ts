@@ -61,7 +61,10 @@ test("save, resume, revision conflicts and owner isolation", async () => {
   assert.equal(draft.lastStep, "visit");
   assert.match(draft.answers.givenNames, /^(FIRST|SECOND)$/);
   assert.equal(draft.revision, original.revision + 1);
-  assert.ok(await renewApplication(owner, id) >= draft.expiresAt);
+  const resumed = await renewApplication(owner, id);
+  assert.equal(original.lastStep, "identity");
+  assert.equal(resumed.lastStep, "visit");
+  assert.ok(resumed.expiresAt >= draft.expiresAt);
   assert.equal((await getApplication(owner, id))?.revision, draft.revision);
 });
 

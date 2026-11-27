@@ -61,17 +61,24 @@ export function validateStep(step: Step, answers: Answers, today = new Date()): 
     if (!answers[key].trim()) errors[key] = "请填写" + ANSWER_LABELS[key] + "。";
   }
   if (step === "identity") {
+    const localDate = new Intl.DateTimeFormat("sv-SE", {
+      timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(today);
     if (!answers.givenNames.trim() && !answers.familyName.trim()) errors.familyName = "请按护照填写姓名。";
     if (answers.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(answers.email.trim())) errors.email = "请检查邮箱地址。";
     if (answers.birthDate) {
-      const localDate = new Intl.DateTimeFormat("sv-SE", {
-        timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit",
-      }).format(today);
       const cutoff = String(Number(localDate.slice(0, 4)) - 18) + localDate.slice(4);
       if (!validDate(answers.birthDate)) errors.birthDate = "请输入有效的出生日期。";
       else if (answers.birthDate > cutoff) errors.birthDate = "本工作区供年满 18 岁的申请人准备自己的申请。";
     }
-    if (answers.passportExpiry && !validDate(answers.passportExpiry)) errors.passportExpiry = "请输入有效的日期。";
+    if (answers.passportExpiry) {
+      if (!validDate(answers.passportExpiry)) errors.passportExpiry = "请输入有效的护照到期日期。";
+      else if (validDate(answers.birthDate) && answers.passportExpiry < answers.birthDate) {
+        errors.passportExpiry = "护照到期日期早于出生日期，请核对这两个日期。";
+      } else if (answers.passportExpiry < localDate) {
+        errors.passportExpiry = "这本护照已过期，请核对有效护照上的到期日期。";
+      }
+    }
   }
   if (step === "visit") {
     if (!["holiday", "visit"].includes(answers.purpose)) errors.purpose = "请选择旅游或探亲访友。";
@@ -107,24 +114,37 @@ export function evidenceFor(answers: Answers): EvidenceRule[] {
 
 export const TEMPLATE_LABELS = { itinerary: "旅行行程单", invitation: "亲友邀请信", employment: "在职与准假证明" } as const;
 export type TemplateKind = keyof typeof TEMPLATE_LABELS;
+// An invitation can combine nine 4,000-character answers with its headings and signature block.
+export const MAX_TEMPLATE_LENGTH = 40_000;
+export const TEMPLATE_REVIEW_NOTICE = "文稿待核对。请确认内容与当前申请信息一致。";
+
+const tripPurposes: Record<string, string> = { holiday: "Holiday", visit: "Visiting family or friends" };
+const tripPayers: Record<string, string> = {
+  self: "The applicant", host: "The host in Australia", other: "Another person", shared: "Shared costs",
+};
 
 export function templateText(kind: TemplateKind, a: Answers): string {
   const name = [a.givenNames, a.familyName].map(v => v.trim()).filter(Boolean).join(" ") || "[Applicant name as in passport]";
-  const field = (key: AnswerKey, placeholder: string) => a[key].trim() || "[" + placeholder + "]";
+  const field = (key: AnswerKey, placeholder: string) => {
+    const value = a.purpose === "holiday" && key.startsWith("host") ? "" : a[key].trim();
+    return value || "[" + placeholder + "]";
+  };
   const dates = field("arrivalDate", "Arrival date") + " to " + field("departureDate", "Departure date");
+  const purpose = "Purpose of travel: " + (tripPurposes[a.purpose] ?? "[Purpose of travel]");
+  const payer = "Who will cover the trip costs: " + (tripPayers[a.payer] ?? "[Who will pay]");
   if (kind === "itinerary") return [
-    "Travel itinerary", "Applicant: " + name, "Dates: " + dates,
+    "Travel itinerary", "Applicant: " + name, purpose, "Dates: " + dates,
     "Places and planned activities: " + field("destinations", "Enter your actual plans"),
     "Accommodation: " + field("accommodation", "Accommodation plans"),
-    "Trip funding: " + field("fundingDetails", "Who will pay and which costs they will cover"),
+    payer, "Trip funding: " + field("fundingDetails", "Who will pay and which costs they will cover"),
   ].join("\n\n");
   if (kind === "invitation") return [
     "Letter of invitation", "Date: [Date signed]", "Dear Visa Officer,",
-    "I, " + field("hostName", "Host name") + ", invite " + name + " to visit me in Australia from " + dates + ".",
+    "I, " + field("hostName", "Host name") + ", invite " + name + " to Australia from " + dates + ".", purpose,
     "Relationship to applicant: " + field("hostRelationship", "Relationship"),
     "My address in Australia: " + field("hostAddress", "Host address"),
     "Accommodation: " + field("accommodation", "Accommodation plans"),
-    "Financial arrangements: " + field("fundingDetails", "State any support provided"),
+    payer, "Financial arrangements: " + field("fundingDetails", "State any support provided"),
     "Host contact details: [Telephone or email]", "Signature: [Host to confirm and sign]",
   ].join("\n\n");
   return [
