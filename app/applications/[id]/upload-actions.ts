@@ -10,14 +10,14 @@ import {
   UPLOAD_URL_SECONDS, documentMedia, isDocumentId, validFileName, validFileSize, type UploadInput,
 } from "@/lib/workspace/storage-policy";
 
-type ActionFailure = { ok: false; message: string };
+type ActionFailure = { ok: false; message: string; retryable: boolean };
 type UploadTicket = { ok: true; id: string; url: string | null } | ActionFailure;
 type MutationResult = { ok: true } | ActionFailure;
 
 function failure(operation: FileOperation, error: unknown): ActionFailure {
   if (error instanceof InvalidUpload) {
     recordFileFailure(operation, "file_contents");
-    return { ok: false, message: "文件的实际格式或大小和上传时不一致。请检查原文件，再选一次。" };
+    return { ok: false, message: "文件的实际格式或大小和上传时不一致。请检查原文件，再选一次。", retryable: false };
   }
   if (error instanceof WorkspaceError) {
     recordFileFailure(operation, error.code);
@@ -27,10 +27,10 @@ function failure(operation: FileOperation, error: unknown): ActionFailure {
       unavailable: "找不到这份草稿或文件。请回到「我的草稿」查看。",
       conflict: "文件信息已更新。请重新选择文件。",
     };
-    return { ok: false, message: messages[error.code] };
+    return { ok: false, message: messages[error.code], retryable: error.code === "quota" };
   }
   recordFileFailure(operation, "service");
-  return { ok: false, message: "暂时无法处理文件，请稍后重试。" };
+  return { ok: false, message: "暂时无法处理文件，请稍后重试。", retryable: true };
 }
 
 function refreshFiles(id: string) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -8,7 +8,7 @@ import type { StepProgress } from "@/lib/workspace/step-progress";
 import { saveDraft } from "@/app/applications/actions";
 import { STEP_FIELDS, STEP_LABELS, STEPS, normalizeAnswers, type Answers, type Step } from "@/lib/workspace/model";
 import { AnswerFields } from "./answer-fields";
-import { EvidenceChecklist, type GroupedFiles } from "./evidence-checklist";
+import { EvidenceChecklist, type FileQueueState, type GroupedFiles } from "./evidence-checklist";
 import { TemplateEditor } from "./template-editor";
 import { Aftercare, WorkspaceReview } from "./workspace-review";
 import { formatDate, type AnswerErrors, type SavedTemplates } from "./editor-types";
@@ -32,6 +32,12 @@ export function DraftEditor(props: Props) {
   const [errors, setErrors] = useState<AnswerErrors>({});
   const [pending, start] = useTransition();
   const [stepsOpen, setStepsOpen] = useState(false);
+  const [fileQueues, setFileQueues] = useState<Record<string, FileQueueState>>({});
+  const fileQueueChanged = useCallback((key: string, state: FileQueueState) => {
+    setFileQueues(previous => previous[key] === state ? previous : { ...previous, [key]: state });
+  }, []);
+  const uploading = Object.values(fileQueues).includes("uploading");
+  const hasQueuedFiles = uploading || Object.values(fileQueues).includes("pending");
   const heading = useRef<HTMLHeadingElement>(null);
   const next = STEPS[STEPS.indexOf(step) + 1];
   const fields = STEP_FIELDS[step];
@@ -62,15 +68,40 @@ export function DraftEditor(props: Props) {
     }
   }, [step]);
   useEffect(() => {
-    if (!dirty) return;
+    if (!dirty && !hasQueuedFiles) return;
     function onLeave(event: BeforeUnloadEvent) { event.preventDefault(); event.returnValue = ""; }
     window.addEventListener("beforeunload", onLeave);
     return () => window.removeEventListener("beforeunload", onLeave);
-  }, [dirty]);
+  }, [dirty, hasQueuedFiles]);
+
+  const canLeaveQueue = useCallback(() => {
+    if (uploading) {
+      setMessage("文件正在上传。请等上传结束后再离开。");
+      return false;
+    }
+    return !hasQueuedFiles || window.confirm("还有文件没上传。离开后需要重新选择这些文件。要离开吗？");
+  }, [hasQueuedFiles, uploading]);
+
+  useEffect(() => {
+    if (!hasQueuedFiles && !dirty) return;
+    function checkLink(event: MouseEvent) {
+      if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
+      if (!link || link.origin !== location.origin || link.target === "_blank" || link.hasAttribute("download")) return;
+      if (link.hash && link.pathname === location.pathname && link.search === location.search) return;
+      if (!canLeaveQueue() || (dirty && !window.confirm("还有修改没保存。要离开这一页吗？"))) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    }
+    document.addEventListener("click", checkLink, true);
+    return () => document.removeEventListener("click", checkLink, true);
+  }, [canLeaveQueue, dirty, hasQueuedFiles]);
 
   function changed() { setDirty(true); setMessage(""); }
   function save(destination: Step, advance = false, close = false, fieldId?: string) {
     if (pending || conflict) return;
+    if ((destination !== step || close) && !canLeaveQueue()) return;
     setMessage("");
     start(async () => {
       try {
@@ -95,7 +126,7 @@ export function DraftEditor(props: Props) {
   }
   function dashboard() {
     if (dirty) save(step, false, true);
-    else router.push("/applications");
+    else if (canLeaveQueue()) router.push("/applications");
   }
   const actionBar = <div className="workspace-actions workspace-step-actions no-print">
     {!finalStep && <Button type="button" variant="outline" disabled={pending || conflict} onClick={() => save(step)}>保存草稿</Button>}
@@ -137,7 +168,7 @@ export function DraftEditor(props: Props) {
         {actionBar}
       </form> : <>
         <div inert={pending}>
-          {step === "evidence" && <EvidenceChecklist applicationId={id} answers={answers} files={files} notes={notes}
+          {step === "evidence" && <EvidenceChecklist applicationId={id} answers={answers} files={files} notes={notes} onFileQueueChange={fileQueueChanged}
             expiry={formatDate(props.expiresAt)} onChange={(key, value) => { setNotes((current) => ({...current, [key]: value})); changed(); }} />}
           {step === "templates" && <TemplateEditor answers={answers} templates={templates} onChange={(kind, entry) => {
             setTemplates((current) => ({...current, [kind]: entry})); changed();
