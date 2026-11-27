@@ -5,6 +5,7 @@ import { listApplications } from "@/data/applications";
 import { DraftControls } from "@/components/workspace/dashboard-controls";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/components/workspace/editor-types";
+import { draftTitles } from "@/components/workspace/draft-titles";
 import { STEP_LABELS } from "@/lib/workspace/model";
 
 export const metadata = { title: "我的草稿" };
@@ -13,6 +14,7 @@ export default async function ApplicationsPage() {
   await connection();
   const { userId } = await auth.protect();
   const drafts = await listApplications(userId);
+  const titles = draftTitles(drafts);
   return <div className="workspace-dashboard">
     <header className="workspace-heading">
       <h1>我的草稿</h1>
@@ -23,7 +25,7 @@ export default async function ApplicationsPage() {
       {drafts.length ? <ul className="draft-list">
         {drafts.map((draft) => <li key={draft.id}>
           <div>
-            <h3>{formatDate(draft.createdAt)} 创建的草稿</h3>
+            <h3>{titles.get(draft.id)}</h3>
             <p>上次停在「{STEP_LABELS[draft.lastStep]}」</p>
             <p className="workspace-meta">上次保存于 {formatDate(draft.updatedAt, true)}（北京时间） · 保留至 {formatDate(draft.expiresAt)}</p>
           </div>

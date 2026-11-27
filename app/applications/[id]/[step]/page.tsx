@@ -5,6 +5,7 @@ import { DraftEditor } from "@/components/workspace/draft-editor";
 import type { GroupedFiles } from "@/components/workspace/evidence-checklist";
 import { buildEvidenceFile } from "@/lib/workspace/storage";
 import { STEP_FIELDS, STEPS } from "@/lib/workspace/model";
+import { answerProgress } from "@/lib/workspace/step-progress";
 
 export const metadata = { title: "申请准备工作区" };
 
@@ -26,6 +27,8 @@ export default async function DraftPage({ params }: { params: Promise<{id: strin
   const keys = step === "evidence" ? ["purpose", "payer"] as const : STEP_FIELDS[step];
   const answers = needsTemplates ? draft.answers : Object.fromEntries(keys.map((key) => [key, draft.answers[key]]));
   return <DraftEditor key={id + step} id={id} step={step} revision={draft.revision} initialAnswers={answers}
+    progress={{ identity: answerProgress("identity", draft.answers), visit: answerProgress("visit", draft.answers),
+      funding: answerProgress("funding", draft.answers) }}
     initialNotes={needsEvidence ? draft.notes : {}} initialTemplates={needsTemplates ? draft.templates : {}}
     updatedAt={draft.updatedAt.toISOString()} expiresAt={draft.expiresAt.toISOString()} files={files} />;
 }

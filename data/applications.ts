@@ -17,10 +17,20 @@ const fileSummary = {
   fileName: documents.fileName, mediaType: documents.mediaType, size: documents.size, createdAt: documents.createdAt,
 };
 
-export function listApplications(ownerId: string) {
-  return getDatabase().select(summary).from(applications)
+export async function listApplications(ownerId: string) {
+  const rows = await getDatabase().select({
+    ...summary, answers: applicantDetails.answers,
+  }).from(applications)
+    .leftJoin(applicantDetails, and(eq(applicantDetails.applicationId, applications.id),
+      eq(applicantDetails.ownerId, applications.ownerId)))
     .where(and(eq(applications.ownerId, ownerId), gt(applications.expiresAt, new Date())))
     .orderBy(desc(applications.updatedAt));
+  return rows.map(({ answers, ...draft }) => ({
+    ...draft,
+    purpose: answers?.purpose ?? "",
+    arrivalDate: answers?.arrivalDate ?? "",
+    departureDate: answers?.departureDate ?? "",
+  }));
 }
 
 export async function getApplication(ownerId: string, id: string) {

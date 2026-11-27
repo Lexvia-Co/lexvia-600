@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import type { StepProgress } from "@/lib/workspace/step-progress";
 import { saveDraft } from "@/app/applications/actions";
 import { STEP_FIELDS, STEP_LABELS, STEPS, normalizeAnswers, type Answers, type Step } from "@/lib/workspace/model";
 import { AnswerFields } from "./answer-fields";
@@ -14,7 +16,7 @@ import { formatDate, type AnswerErrors, type SavedTemplates } from "./editor-typ
 type Props = {
   id: string; revision: number; step: Step; initialAnswers: Partial<Answers>;
   initialNotes: Record<string, string>; initialTemplates: SavedTemplates;
-  files: GroupedFiles; updatedAt: string; expiresAt: string;
+  files: GroupedFiles; updatedAt: string; expiresAt: string; progress: StepProgress;
 };
 
 export function DraftEditor(props: Props) {
@@ -29,6 +31,7 @@ export function DraftEditor(props: Props) {
   const [conflict, setConflict] = useState(false);
   const [errors, setErrors] = useState<AnswerErrors>({});
   const [pending, start] = useTransition();
+  const [stepsOpen, setStepsOpen] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const next = STEPS[STEPS.indexOf(step) + 1];
   const fields = STEP_FIELDS[step];
@@ -103,12 +106,20 @@ export function DraftEditor(props: Props) {
   return <div className="workspace-editor">
     <aside className="workspace-sidebar no-print">
       <Button type="button" variant="ghost" disabled={pending} onClick={dashboard}>← 我的草稿</Button>
-      <nav aria-label="申请准备步骤"><ol>{STEPS.map((item, index) => <li key={item}>
-        <button type="button" disabled={pending || conflict} aria-current={item === step ? "step" : undefined}
+      <nav aria-label="申请准备步骤"><Collapsible open={stepsOpen} onOpenChange={setStepsOpen}>
+        <CollapsibleTrigger asChild><Button type="button" variant="outline" size="sm" className="step-list-trigger">
+          {stepsOpen ? "收起步骤" : "查看全部步骤"}
+        </Button></CollapsibleTrigger>
+        <CollapsibleContent forceMount className="step-list-content"><ol>{STEPS.map((item, index) => <li key={item}>
+        <Button type="button" variant={item === step ? "secondary" : "ghost"} className="step-link"
+          disabled={pending || conflict} aria-current={item === step ? "step" : undefined}
           onClick={() => { if (item !== step) save(item); }}>
-          <span aria-hidden="true">{index + 1}</span>{STEP_LABELS[item]}
-        </button>
-      </li>)}</ol></nav>
+          <span aria-hidden="true">{index + 1}</span><span>{STEP_LABELS[item]}</span>
+          {(item === "identity" || item === "visit" || item === "funding") &&
+            <small>{props.progress[item]}</small>}
+          {item === "templates" && <small>选填</small>}
+        </Button>
+      </li>)}</ol></CollapsibleContent></Collapsible></nav>
     </aside>
     <section className="workspace-panel workspace-current">
       <header className="workspace-heading">

@@ -53,6 +53,11 @@ test("save, resume, revision conflicts and owner isolation", async () => {
   const original = await getApplication(owner, id);
   assert.ok(original);
   assert.equal(original.answers.purpose, "visit");
+  const [listed] = await listApplications(owner);
+  assert.equal(listed.id, id);
+  assert.equal(listed.purpose, "visit");
+  assert.equal(listed.arrivalDate, "");
+  assert.ok(!Object.hasOwn(listed, "answers"));
   const saves = await Promise.allSettled(["FIRST", "SECOND"].map(givenNames =>
     saveApplication(owner, id, original.revision, { lastStep: "visit", answers: { givenNames } })));
   assert.equal(saves.filter(save => save.status === "fulfilled").length, 1);
