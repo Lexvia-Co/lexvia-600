@@ -8,8 +8,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   applicationName: "VBER",
-  title: { default: "澳大利亚访客签证申请准备 | VBER", template: "%s | VBER" },
-  description: "为赴澳旅游或探亲访友整理个人资料、证明材料和文书，核对后前往 ImmiAccount 自行递交。",
+  title: { default: "准备澳大利亚访客签证申请 | VBER", template: "%s | VBER" },
+  description: "在 VBER 用中文填写赴澳行程、整理证明材料、准备英文文书，再到自己的 ImmiAccount 递交申请。",
 };
 
 export default function RootLayout({ children }: Readonly<{children: React.ReactNode}>) {

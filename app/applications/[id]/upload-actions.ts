@@ -17,15 +17,15 @@ type MutationResult = { ok: true } | ActionFailure;
 function failure(operation: FileOperation, error: unknown): ActionFailure {
   if (error instanceof InvalidUpload) {
     recordFileFailure(operation, "file_contents");
-    return { ok: false, message: "文件内容与所选格式或大小不符，请检查后重新选择。" };
+    return { ok: false, message: "文件的实际格式或大小和上传时不一致。请检查原文件，再选一次。" };
   }
   if (error instanceof WorkspaceError) {
     recordFileFailure(operation, error.code);
     const messages = {
-      invalid: "文件资料有误，请重新选择。",
+      invalid: "没能识别这个文件。请检查文件名和格式，再选一次。",
       quota: "这份草稿已达到文件数量或容量上限。请先移除不需要的文件。",
-      unavailable: "找不到这份草稿或文件。请返回草稿列表查看。",
-      conflict: "文件信息已变更，请重新选择文件。",
+      unavailable: "找不到这份草稿或文件。请回到「我的草稿」查看。",
+      conflict: "文件信息已更新。请重新选择文件。",
     };
     return { ok: false, message: messages[error.code] };
   }

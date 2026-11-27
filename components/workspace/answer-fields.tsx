@@ -6,7 +6,7 @@ import type { AnswerErrors } from "./editor-types";
 
 const choices: Partial<Record<AnswerKey, Record<string, string>>> = {
   purpose: { holiday: "旅游度假", visit: "探亲访友" },
-  payer: { self: "我自己", host: "在澳邀请人", other: "其他人", shared: "共同承担" },
+  payer: { self: "我自己", host: "邀请我去澳大利亚的人", other: "其他人", shared: "几个人一起付" },
 };
 const multiLine: AnswerKey[] = ["destinations", "accommodation", "travelHistory", "hostAddress", "fundingDetails", "returnTies"];
 const dateFields: AnswerKey[] = ["birthDate", "passportExpiry", "arrivalDate", "departureDate"];
@@ -14,11 +14,11 @@ const autoComplete: Partial<Record<AnswerKey, string>> = {
   givenNames: "given-name", familyName: "family-name", birthDate: "bday", email: "email",
 };
 const hints: Partial<Record<AnswerKey, string>> = {
-  familyName: "按护照个人资料页的拼写填写。护照上只有一个姓名时，可只填写对应的一栏。",
-  travelHistory: "可填写以往去过的国家或地区和大致时间。如没有出境记录，请填写“无”。",
-  fundingDetails: "说明预计开支、由谁支付，以及你打算用哪些材料说明资金来源。",
-  occupation: "可填写工作、学习、退休或其他实际情况。",
-  returnTies: "可填写返岗、开学、家庭照护等与你有关的安排。",
+  familyName: "姓和名都按护照个人资料页上的拼写填写。如果护照只列了姓或名，填对应的一栏就可以。",
+  travelHistory: "写下你去过的国家或地区、大概什么时候去的、每次待了多久。没有出境记录就填“无”。",
+  fundingDetails: "大概会花多少钱？钱从哪里来？可以写下你手头有哪些材料能说明这笔钱的来源。",
+  occupation: "可以写你做什么工作、在哪里上学，或说明已退休等情况。",
+  returnTies: "比如什么时候回去上班、开学，或回国后需要照顾哪位家人。",
 };
 
 export function visibleFields(step: Step, answers: Answers) {

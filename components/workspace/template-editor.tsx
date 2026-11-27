@@ -21,7 +21,7 @@ export function TemplateEditor({ answers, templates, onChange }: {
     if (preview) dialog.current?.showModal();
   }, [preview]);
   return <div className="workspace-stack">
-    <p>按需要选择文书。请核实内容，把方括号和仍为中文的内容改为准确的英文。邀请信及单位证明应由出具人确认和签署。</p>
+    <p>选一份需要的模板，把方括号里的提示换成自己的信息，再把文中剩下的中文改成英文。邀请信请亲友核对并签字，单位证明请交给单位核对并签字。</p>
     {(Object.keys(TEMPLATE_LABELS) as TemplateKind[]).map((kind) => {
       const previous = templates[kind];
       const fingerprint = templateFingerprint(kind, answers);
@@ -33,8 +33,8 @@ export function TemplateEditor({ answers, templates, onChange }: {
           {needsReview && <div className="workspace-notice">
             <p id={kind + "-review"}>{TEMPLATE_REVIEW_NOTICE}</p>
             <Button type="button" variant="outline" onClick={() => {
-              onChange(kind, { body, fingerprint }); setFeedback("已标记为核对，请保存草稿。");
-            }}>已核对，保留当前文稿</Button>
+              onChange(kind, { body, fingerprint }); setFeedback("已核对。点「保存草稿」保留这次修改。");
+            }}>已核对，保留这版</Button>
           </div>}
           <Field><FieldLabel htmlFor={kind}>英文文稿</FieldLabel>
             <Textarea id={kind} name={kind} rows={10} lang="en" maxLength={MAX_TEMPLATE_LENGTH} value={body}
@@ -45,14 +45,14 @@ export function TemplateEditor({ answers, templates, onChange }: {
           <div className="workspace-actions">
             <Button type="button" variant="outline" onClick={() => setPreview(kind)}>预览与打印</Button>
             <Button type="button" variant="outline" onClick={async () => {
-              try { await navigator.clipboard.writeText(body); setFeedback("已复制" + TEMPLATE_LABELS[kind] + "。"); }
-              catch { setFeedback("请选中文稿后复制。"); }
+              try { await navigator.clipboard.writeText(body); setFeedback(TEMPLATE_LABELS[kind] + "已复制。"); }
+              catch { setFeedback("没能自动复制，请选中文稿再复制。"); }
             }}>复制文稿</Button>
             {previous ? <Button type="button" variant="ghost" onClick={() => setReplace(kind)}>重新生成</Button> :
               <Button type="button" variant="ghost" onClick={() => onChange(kind, { body, fingerprint })}>使用此文稿</Button>}
           </div>
           {replace === kind && <div className="workspace-notice">
-            <p>重新生成会替换这份文稿中的手动修改。</p>
+            <p>重新生成会覆盖你在这份文稿里改过的内容。</p>
             <div className="workspace-actions"><Button type="button" onClick={() => {
               onChange(kind, { body: templateText(kind, answers), fingerprint }); setReplace(null);
             }}>替换文稿</Button>

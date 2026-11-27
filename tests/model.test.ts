@@ -1,7 +1,7 @@
 import { deepEqual, equal, match, notEqual, ok } from "node:assert/strict";
 import test from "node:test";
 import {
-  MAX_TEMPLATE_LENGTH, TEMPLATE_LABELS, emptyAnswers, evidenceFor, normalizeAnswers, templateFingerprint, templateText,
+  ANSWER_LABELS, MAX_TEMPLATE_LENGTH, TEMPLATE_LABELS, emptyAnswers, evidenceFor, normalizeAnswers, templateFingerprint, templateText,
   validateStep, type TemplateKind,
 } from "../lib/workspace/model";
 
@@ -31,6 +31,8 @@ test("passport expiry must be a real date after birth and still valid on the Bei
     residence: "中国", email: "traveler@example.invalid", passportExpiry: "2026-11-26" };
   const beforeMidnight = new Date("2026-11-26T15:59:59Z");
   const afterMidnight = new Date("2026-11-26T16:00:00Z");
+  equal(ANSWER_LABELS.passportExpiry, "护照到期日期");
+  equal(validateStep("identity", { ...answers, passportExpiry: "" }, beforeMidnight).passportExpiry, "请填写护照的到期日期。");
   match(validateStep("identity", { ...answers, passportExpiry: "1990-01-01" }, beforeMidnight).passportExpiry ?? "", /早于出生日期/);
   match(validateStep("identity", { ...answers, passportExpiry: "2030-02-30" }, beforeMidnight).passportExpiry ?? "", /有效的护照到期日期/);
   deepEqual(validateStep("identity", answers, beforeMidnight), {});
@@ -54,6 +56,11 @@ test("template changes depend on the facts each letter uses and preserve Chinese
   notEqual(templateFingerprint("invitation", answers), templateFingerprint("invitation", edited));
   equal(templateFingerprint("employment", answers), templateFingerprint("employment", edited));
   equal(templateFingerprint("itinerary", answers), templateFingerprint("itinerary", edited));
+});
+
+test("a reviewed guide does not invalidate a saved letter with unchanged details", () => {
+  const answers = { ...emptyAnswers(), givenNames: "An", familyName: "Li" };
+  equal(templateFingerprint("employment", answers), "2026-11-26-fe3ffa93");
 });
 
 test("payer and purpose changes update the itinerary and invitation, including older drafts", () => {
