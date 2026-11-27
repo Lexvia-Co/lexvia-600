@@ -5,9 +5,9 @@ VBER is a Mandarin workspace for adults in mainland China preparing their own Au
 ## Applicant workflow
 
 1. Visit `/guide` for a public scope check covering age, location, and reason for travel. The guide links to Home Affairs guidance for people outside the workspace’s scope.
-2. Sign in at `/sign-in` or register at `/sign-up`. The dashboard at `/applications` lets applicants create, resume, and delete drafts.
-3. Each draft moves through identity, visit, funding, evidence, templates, review, and aftercare. The evidence checklist adapts to the trip purpose and who pays. Applicants can attach originals with their English translations and edit an English itinerary, invitation letter, or employment and leave letter.
-4. Review highlights answers that need attention and links back to the relevant fields. Applicants can print the summary, open ImmiAccount, and return to the draft for post-lodgement guidance.
+2. After sign-in or registration, `/applications/new` carries over the trip purpose from the guide. Applicants can change it and confirm they are preparing their own application before creating a draft. Returning applicants can resume drafts by trip from `/applications`.
+3. Each draft covers identity, visit, funding, evidence, optional letter templates, review, and aftercare. The evidence checklist adapts to the trip purpose and who pays. Applicants can upload originals, attach translations to a specific original, and retry individual files. Saved answer sections show their progress in the step list.
+4. Review highlights answers that need attention. Applicants can edit an answer and return to its row, print the summary, or open ImmiAccount. The aftercare step explains where to check for messages after lodgement.
 
 Drafts expire after 90 days of inactivity. Resuming a draft or saving a change renews that period. Evidence uploads accept PDF, JPEG, and PNG, up to 10 MiB per file. Each draft can hold up to 40 files totalling up to 100 MiB.
 

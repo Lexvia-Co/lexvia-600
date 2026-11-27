@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { StepProgress } from "@/lib/workspace/step-progress";
 import { saveDraft } from "@/app/applications/actions";
-import { STEP_FIELDS, STEP_LABELS, STEPS, normalizeAnswers, type Answers, type Step } from "@/lib/workspace/model";
+import { EVIDENCE_LABELS, STEP_FIELDS, STEP_LABELS, STEPS, TEMPLATE_LABELS, normalizeAnswers, type Answers, type Step } from "@/lib/workspace/model";
 import { AnswerFields } from "./answer-fields";
 import { EvidenceChecklist, type FileQueueState, type GroupedFiles } from "./evidence-checklist";
 import { TemplateEditor } from "./template-editor";
@@ -19,9 +19,20 @@ type Props = {
   files: GroupedFiles; updatedAt: string; expiresAt: string; progress: StepProgress;
 };
 
+type SaveOptions = { advance?: boolean; close?: boolean; focus?: string; editFromReview?: boolean };
+
+function reviewTarget(step: Step, target: string | null) {
+  if (!target) return;
+  if (STEP_FIELDS[step].some(key => key === target)) return target;
+  if (step === "evidence" && (target === step ||
+    target.startsWith("evidence-") && Object.hasOwn(EVIDENCE_LABELS, target.slice("evidence-".length)))) return target;
+  if (step === "templates" && (target === step || Object.hasOwn(TEMPLATE_LABELS, target))) return target;
+}
+
 export function DraftEditor(props: Props) {
   const { id, step, files } = props;
   const router = useRouter();
+  const returnTarget = reviewTarget(step, useSearchParams().get("review"));
   const [answers, setAnswers] = useState(() => normalizeAnswers(props.initialAnswers));
   const [notes, setNotes] = useState(props.initialNotes);
   const [templates, setTemplates] = useState(props.initialTemplates);
@@ -99,7 +110,7 @@ export function DraftEditor(props: Props) {
   }, [canLeaveQueue, dirty, hasQueuedFiles]);
 
   function changed() { setDirty(true); setMessage(""); }
-  function save(destination: Step, advance = false, close = false, fieldId?: string) {
+  function save(destination: Step, { advance = false, close, focus, editFromReview }: SaveOptions = {}) {
     if (pending || conflict) return;
     if ((destination !== step || close) && !canLeaveQueue()) return;
     setMessage("");
@@ -120,18 +131,26 @@ export function DraftEditor(props: Props) {
         setErrors({}); setDirty(false); setRevision(result.revision);
         setMessage("已保存草稿。");
         if (close) router.push("/applications");
-        else if (destination !== step) router.push(`/applications/${id}/${destination}` + (fieldId ? "#" + encodeURIComponent(fieldId) : ""));
-      } catch { setMessage("未能确认保存结果。请检查网络连接，保留当前页面后重试。"); }
+        else if (destination !== step) {
+          const query = editFromReview ? "?review=" + encodeURIComponent(focus ?? destination) : "";
+          const hash = focus ? "#" + encodeURIComponent(focus) : "";
+          router.push(`/applications/${id}/${destination}${query}${hash}`);
+        }
+      } catch { setMessage("暂时无法确认是否保存成功。请留在这一页，检查网络后再试。"); }
     });
   }
   function dashboard() {
-    if (dirty) save(step, false, true);
+    if (dirty) save(step, { close: true });
     else if (canLeaveQueue()) router.push("/applications");
+  }
+  function continueEditing() {
+    if (returnTarget) save("review", { focus: "review-" + returnTarget });
+    else if (next) save(next, { advance: true });
   }
   const actionBar = <div className="workspace-actions workspace-step-actions no-print">
     {!finalStep && <Button type="button" variant="outline" disabled={pending || conflict} onClick={() => save(step)}>保存草稿</Button>}
     {next && <Button type={fields.length ? "submit" : "button"} disabled={pending || conflict}
-      onClick={fields.length ? undefined : () => save(next, true)}>保存并继续</Button>}
+      onClick={fields.length ? undefined : continueEditing}>{returnTarget ? "保存并返回核对" : "保存并继续"}</Button>}
     {finalStep && <Button type="button" variant="outline" onClick={dashboard}>返回我的草稿</Button>}
   </div>;
   return <div className="workspace-editor">
@@ -158,7 +177,7 @@ export function DraftEditor(props: Props) {
         <h1 ref={heading} tabIndex={-1}>{STEP_LABELS[step]}</h1>
         <p className="workspace-meta">上次保存于 {formatDate(props.updatedAt, true)}（北京时间） · 保留至 {formatDate(props.expiresAt)}</p>
       </header>
-      {fields.length ? <form className="workspace-stack" noValidate method="post" onSubmit={(event) => { event.preventDefault(); if (next) save(next, true); }}>
+      {fields.length ? <form className="workspace-stack" noValidate method="post" onSubmit={(event) => { event.preventDefault(); continueEditing(); }}>
         <fieldset disabled={pending} className="workspace-form-fields"><legend className="sr-only">{STEP_LABELS[step]}</legend>
           <AnswerFields step={step} answers={answers} errors={errors} onChange={(key, value) => {
             setAnswers((current) => ({ ...current, [key]: value }));
@@ -173,7 +192,8 @@ export function DraftEditor(props: Props) {
           {step === "templates" && <TemplateEditor answers={answers} templates={templates} onChange={(kind, entry) => {
             setTemplates((current) => ({...current, [kind]: entry})); changed();
           }} />}
-          {step === "review" && <WorkspaceReview answers={answers} files={files} notes={notes} templates={templates} onEdit={(target, fieldId) => save(target, false, false, fieldId)} />}
+          {step === "review" && <WorkspaceReview answers={answers} files={files} notes={notes} templates={templates}
+            onEdit={(target, focus) => save(target, { focus, editFromReview: true })} />}
           {step === "aftercare" && <Aftercare />}
         </div>
         {actionBar}
