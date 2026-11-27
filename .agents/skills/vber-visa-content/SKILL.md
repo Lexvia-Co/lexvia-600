@@ -5,7 +5,7 @@ description: Write or review VBER’s applicant-facing Mandarin interface copy, 
 
 # VBER applicant content
 
-Use the [MVP plan](../../../docs/mvp-plan.md) to identify the applicant and the step. The initial guide covers one adult preparing their own Tourist stream application from outside Australia. VBER helps them prepare a draft. They lodge and pay through ImmiAccount.
+Identify the applicant and the step using the [applicant workflow](../../../README.md#applicant-workflow). The initial guide covers one adult preparing their own Tourist stream application from outside Australia. VBER helps them prepare a draft. They lodge and pay through ImmiAccount.
 
 ## Write and review the interface
 
