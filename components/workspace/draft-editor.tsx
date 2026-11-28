@@ -7,24 +7,29 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import type { StepProgress } from "@/lib/workspace/step-progress";
 import { saveDraft } from "@/app/applications/actions";
 import { EVIDENCE_LABELS, STEP_FIELDS, STEP_LABELS, STEPS, TEMPLATE_LABELS, normalizeAnswers, type Answers, type Step } from "@/lib/workspace/model";
+import { isDocumentId } from "@/lib/workspace/storage-policy";
 import { AnswerFields } from "./answer-fields";
 import { EvidenceChecklist, type FileQueueState, type GroupedFiles } from "./evidence-checklist";
 import { TemplateEditor } from "./template-editor";
+import { PreparationAssistant } from "./preparation-assistant";
+import type { EnglishWording, WordingKey } from "@/lib/workspace/handoff";
 import { Aftercare, WorkspaceReview } from "./workspace-review";
 import { formatDate, type AnswerErrors, type SavedTemplates } from "./editor-types";
 
 type Props = {
   id: string; revision: number; step: Step; initialAnswers: Partial<Answers>;
   initialNotes: Record<string, string>; initialTemplates: SavedTemplates;
+  initialWording: EnglishWording; pilotAvailable: boolean;
   files: GroupedFiles; updatedAt: string; expiresAt: string; progress: StepProgress;
 };
 
-type SaveOptions = { advance?: boolean; close?: boolean; focus?: string; editFromReview?: boolean };
+type SaveOptions = { advance?: boolean; close?: boolean; focus?: string; editFromReview?: boolean; confirmedWording?: EnglishWording };
 
 function reviewTarget(step: Step, target: string | null) {
   if (!target) return;
   if (STEP_FIELDS[step].some(key => key === target)) return target;
   if (step === "evidence" && (target === step ||
+    target.startsWith("file-") && isDocumentId(target.slice("file-".length)) ||
     target.startsWith("evidence-") && Object.hasOwn(EVIDENCE_LABELS, target.slice("evidence-".length)))) return target;
   if (step === "templates" && (target === step || Object.hasOwn(TEMPLATE_LABELS, target))) return target;
 }
@@ -36,6 +41,7 @@ export function DraftEditor(props: Props) {
   const [answers, setAnswers] = useState(() => normalizeAnswers(props.initialAnswers));
   const [notes, setNotes] = useState(props.initialNotes);
   const [templates, setTemplates] = useState(props.initialTemplates);
+  const [englishWording, setEnglishWording] = useState(props.initialWording);
   const [revision, setRevision] = useState(props.revision);
   const [dirty, setDirty] = useState(false);
   const [message, setMessage] = useState("");
@@ -48,7 +54,8 @@ export function DraftEditor(props: Props) {
     setFileQueues(previous => previous[key] === state ? previous : { ...previous, [key]: state });
   }, []);
   const uploading = Object.values(fileQueues).includes("uploading");
-  const hasQueuedFiles = uploading || Object.values(fileQueues).includes("pending");
+  const updatingFiles = Object.values(fileQueues).includes("updating");
+  const hasQueuedFiles = uploading || updatingFiles || Object.values(fileQueues).includes("pending");
   const heading = useRef<HTMLHeadingElement>(null);
   const next = STEPS[STEPS.indexOf(step) + 1];
   const fields = STEP_FIELDS[step];
@@ -60,6 +67,7 @@ export function DraftEditor(props: Props) {
     setAnswers(normalizeAnswers(props.initialAnswers));
     setNotes(props.initialNotes);
     setTemplates(props.initialTemplates);
+    setEnglishWording(props.initialWording);
     setRevision(props.revision);
     setErrors({});
     setConflict(false);
@@ -86,12 +94,16 @@ export function DraftEditor(props: Props) {
   }, [dirty, hasQueuedFiles]);
 
   const canLeaveQueue = useCallback(() => {
+    if (updatingFiles) {
+      setMessage("正在更新材料检查，请稍候再离开。");
+      return false;
+    }
     if (uploading) {
       setMessage("文件正在上传。请等上传结束后再离开。");
       return false;
     }
     return !hasQueuedFiles || window.confirm("还有文件没上传。离开后需要重新选择这些文件。要离开吗？");
-  }, [hasQueuedFiles, uploading]);
+  }, [hasQueuedFiles, uploading, updatingFiles]);
 
   useEffect(() => {
     if (!hasQueuedFiles && !dirty) return;
@@ -110,7 +122,7 @@ export function DraftEditor(props: Props) {
   }, [canLeaveQueue, dirty, hasQueuedFiles]);
 
   function changed() { setDirty(true); setMessage(""); }
-  function save(destination: Step, { advance = false, close, focus, editFromReview }: SaveOptions = {}) {
+  function save(destination: Step, { advance = false, close, focus, editFromReview, confirmedWording }: SaveOptions = {}) {
     if (pending || conflict) return;
     if ((destination !== step || close) && !canLeaveQueue()) return;
     setMessage("");
@@ -121,6 +133,7 @@ export function DraftEditor(props: Props) {
           answers: fields.length ? Object.fromEntries(fields.map((key) => [key, answers[key]])) : undefined,
           notes: step === "evidence" ? notes : undefined,
           templates: step === "templates" ? templates : undefined,
+          englishWording: step === "review" ? confirmedWording ?? englishWording : undefined,
         });
         if (!result.ok) {
           setErrors(result.errors ?? {}); setConflict(!!result.conflict); setMessage(result.message);
@@ -129,6 +142,7 @@ export function DraftEditor(props: Props) {
           return;
         }
         setErrors({}); setDirty(false); setRevision(result.revision);
+        if (confirmedWording) setEnglishWording(confirmedWording);
         setMessage("已保存草稿。");
         if (close) router.push("/applications");
         else if (destination !== step) {
@@ -146,6 +160,10 @@ export function DraftEditor(props: Props) {
   function continueEditing() {
     if (returnTarget) save("review", { focus: "review-" + returnTarget });
     else if (next) save(next, { advance: true });
+  }
+  function editWording(key: WordingKey, text: string) {
+    setEnglishWording(current => ({ ...current, [key]: { text, confirmed: false } }));
+    changed();
   }
   const actionBar = <div className="workspace-actions workspace-step-actions no-print">
     {!finalStep && <Button type="button" variant="outline" disabled={pending || conflict} onClick={() => save(step)}>保存草稿</Button>}
@@ -177,6 +195,7 @@ export function DraftEditor(props: Props) {
         <h1 ref={heading} tabIndex={-1}>{STEP_LABELS[step]}</h1>
         <p className="workspace-meta">上次保存于 {formatDate(props.updatedAt, true)}（北京时间） · 保留至 {formatDate(props.expiresAt)}</p>
       </header>
+      <PreparationAssistant draftId={id} step={step} pilotAvailable={props.pilotAvailable} />
       {fields.length ? <form className="workspace-stack" noValidate method="post" onSubmit={(event) => { event.preventDefault(); continueEditing(); }}>
         <fieldset disabled={pending} className="workspace-form-fields"><legend className="sr-only">{STEP_LABELS[step]}</legend>
           <AnswerFields step={step} answers={answers} errors={errors} onChange={(key, value) => {
@@ -192,7 +211,9 @@ export function DraftEditor(props: Props) {
           {step === "templates" && <TemplateEditor answers={answers} templates={templates} onChange={(kind, entry) => {
             setTemplates((current) => ({...current, [kind]: entry})); changed();
           }} />}
-          {step === "review" && <WorkspaceReview answers={answers} files={files} notes={notes} templates={templates}
+          {step === "review" && <WorkspaceReview applicationId={id} answers={answers} files={files} notes={notes} templates={templates}
+            englishWording={englishWording} onWordingChange={editWording}
+            onWordingConfirm={(key, text) => save(step, { confirmedWording: { ...englishWording, [key]: { text, confirmed: true } } })}
             onEdit={(target, focus) => save(target, { focus, editFromReview: true })} />}
           {step === "aftercare" && <Aftercare />}
         </div>

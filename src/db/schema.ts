@@ -1,7 +1,9 @@
 import {
-  index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid, varchar,
+  boolean, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid, varchar,
 } from "drizzle-orm/pg-core";
 import type { Answers, Step, TemplateKind } from "../../lib/workspace/model";
+import type { EnglishWording } from "../../lib/workspace/handoff";
+import type { DocumentLanguage, DocumentUse, FileInspection } from "../../lib/workspace/document-checks";
 
 export const usersTable = pgTable("users", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -37,6 +39,7 @@ export const applicantDetails = pgTable("applicant_details", {
   applicationId: uuid("application_id").primaryKey().references(() => applications.id, { onDelete: "cascade" }),
   ownerId: text("owner_id").notNull(),
   answers: jsonb().$type<Answers>().notNull(),
+  englishWording: jsonb("english_wording").$type<EnglishWording>().notNull().default({}),
 });
 
 export const evidenceItems = pgTable("evidence_items", {
@@ -57,6 +60,10 @@ export const documents = pgTable("documents", {
   fileName: text("file_name").notNull(),
   mediaType: text("media_type").notNull(),
   size: integer().notNull(),
+  language: text().$type<DocumentLanguage>().notNull().default("unknown"),
+  intendedUse: text("intended_use").$type<DocumentUse>().notNull().default("unknown"),
+  fileInspection: text("file_inspection").$type<FileInspection>().notNull().default("unknown"),
+  referenceOnly: boolean("reference_only").notNull().default(false),
   state: text().$type<"pending" | "ready">().notNull().default("pending"),
   createdAt: time("created_at").notNull().defaultNow(),
 }, table => [
@@ -74,3 +81,10 @@ export const storageCleanup = pgTable("storage_cleanup", {
   primaryKey({ columns: [table.documentId, table.kind] }),
   index("storage_cleanup_due_idx").on(table.dueAt),
 ]);
+
+// One counter per pilot account, reused on each UTC day across all its drafts.
+export const assistantUsage = pgTable("assistant_usage", {
+  ownerId: text("owner_id").primaryKey(),
+  day: text().notNull(),
+  attempts: integer().notNull(),
+});

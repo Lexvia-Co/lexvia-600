@@ -1,6 +1,6 @@
 import { documentMedia, validFileName, validFileSize } from "@/lib/workspace/storage-policy";
 
-export type FileQueueState = "empty" | "pending" | "uploading";
+export type FileQueueState = "empty" | "pending" | "uploading" | "updating";
 type EntryState = "ready" | "uploading" | "failed" | "rejected";
 
 export type QueuedFile = {

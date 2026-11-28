@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>递交材料包 · 模拟填写</title>
+<style>
+  :root { color-scheme: light dark; font: 1rem/1.6 system-ui, sans-serif; }
+  main { max-width: 34rem; margin: 2rem auto; padding: 0 1rem; }
+  label { display: grid; gap: .3rem; margin-block: 1rem; }
+  input { box-sizing: border-box; width: 100%; padding: .5rem; font: inherit; }
+</style>
+<main>
+  <h1>模拟填写</h1>
+  <p>请使用练习草稿，填写护照上的姓和两项旅行日期，再选择一份资金证明原件及其英文译本。每个日期按年、月、日填写，例如 2027-01-31。</p>
+  <label lang="en">Family name<input id="name" autocomplete="off"></label>
+  <label lang="en">Planned arrival date<input id="arrival" autocomplete="off"></label>
+  <label lang="en">Planned final departure date<input id="departure" autocomplete="off"></label>
+  <label>资金证明原件<input type="file" id="original"></label>
+  <label>对应的英文译本<input type="file" id="translation"></label>
+  <p>填好后请告知主持人。练习内容只在本页显示。</p>
+</main>
+</html>

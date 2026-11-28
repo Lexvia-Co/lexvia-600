@@ -1,0 +1,149 @@
+{
+  "type": "diff",
+  "version": "10",
+  "dialect": "postgres",
+  "id": "fbc0418a-a5e6-4aa8-a665-e03983dd8af3",
+  "prevIds": [
+    "bcf3c523-0c1a-4ff9-8edc-3ef5a7194caa"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "documents",
+        "language"
+      ],
+      "writes": [
+        "s|col|public.documents.language",
+        "n|col|public.documents.language",
+        "e|col|public.documents.language"
+      ],
+      "reads": [
+        "n|tbl|public.documents",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "documents",
+        "intended_use"
+      ],
+      "writes": [
+        "s|col|public.documents.intended_use",
+        "n|col|public.documents.intended_use",
+        "e|col|public.documents.intended_use"
+      ],
+      "reads": [
+        "n|tbl|public.documents",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "documents",
+        "file_inspection"
+      ],
+      "writes": [
+        "s|col|public.documents.file_inspection",
+        "n|col|public.documents.file_inspection",
+        "e|col|public.documents.file_inspection"
+      ],
+      "reads": [
+        "n|tbl|public.documents",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "documents",
+        "reference_only"
+      ],
+      "writes": [
+        "s|col|public.documents.reference_only",
+        "n|col|public.documents.reference_only",
+        "e|col|public.documents.reference_only"
+      ],
+      "reads": [
+        "n|tbl|public.documents",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "documents",
+        "name": "language",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'unknown'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "documents",
+        "name": "intended_use",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'unknown'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "documents",
+        "name": "file_inspection",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'unknown'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "documents",
+        "name": "reference_only",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

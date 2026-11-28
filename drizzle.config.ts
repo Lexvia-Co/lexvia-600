@@ -15,6 +15,6 @@ export default defineConfig({
   schemaFilter: ["public"],
   tablesFilter: [
     "users", "lexvia_realtime_probes", "applications", "applicant_details",
-    "evidence_items", "documents", "storage_cleanup",
+    "evidence_items", "documents", "storage_cleanup", "assistant_usage",
   ],
 });

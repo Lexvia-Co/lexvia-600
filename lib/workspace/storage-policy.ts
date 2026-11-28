@@ -1,3 +1,5 @@
+import type { DocumentLanguage, DocumentUse, FileInspection } from "./document-checks";
+
 export type DocumentRole = "original" | "translation";
 export type DocumentMedia = "application/pdf" | "image/jpeg" | "image/png";
 
@@ -12,7 +14,24 @@ export interface EvidenceFile {
   size: number;
   role: DocumentRole;
   originalId: string | null;
+  language: DocumentLanguage;
+  intendedUse: DocumentUse;
+  fileInspection: FileInspection;
+  referenceOnly: boolean;
   downloadUrl: string;
+}
+
+export type EvidenceDetailsChange =
+  | { language: DocumentLanguage }
+  | { intendedUse: DocumentUse }
+  | { referenceOnly: boolean };
+
+export function validEvidenceChange(change: unknown): change is EvidenceDetailsChange {
+  if (!change || typeof change !== "object" || Object.keys(change).length !== 1) return false;
+  const [field, value] = Object.entries(change)[0];
+  if (field === "language") return value === "unknown" || value === "english" || value === "nonEnglish";
+  if (field === "intendedUse") return value === "unknown" || value === "document" || value === "portrait";
+  return field === "referenceOnly" && typeof value === "boolean";
 }
 
 export interface UploadInput {

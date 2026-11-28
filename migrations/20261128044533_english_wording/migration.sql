@@ -1,0 +1,1 @@
+ALTER TABLE "applicant_details" ADD COLUMN "english_wording" jsonb DEFAULT '{}' NOT NULL;

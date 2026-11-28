@@ -1,4 +1,5 @@
 import type { Answers, Step, TemplateKind } from "@/lib/workspace/model";
+import type { EnglishWording } from "@/lib/workspace/handoff";
 
 export type SavedTemplates = Partial<Record<TemplateKind, { body: string; fingerprint: string }>>;
 export type AnswerErrors = Partial<Record<keyof Answers, string>>;
@@ -11,6 +12,7 @@ export type SaveInput = {
   answers?: Partial<Answers>;
   notes?: Record<string, string>;
   templates?: SavedTemplates;
+  englishWording?: EnglishWording;
 };
 export type SaveResult =
   | { ok: true; revision: number; updatedAt: string; expiresAt: string }

@@ -1,7 +1,8 @@
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
-import { EVIDENCE_LABELS, OFFICIAL, evidenceFor, type Answers } from "@/lib/workspace/model";
+import { EVIDENCE_LABELS, evidenceFor, type Answers } from "@/lib/workspace/model";
 import type { EvidenceFile } from "@/lib/workspace/storage-policy";
+import { DOCUMENT_CHECK_GUIDANCE, documentIssues, isReferenceFile } from "@/lib/workspace/document-checks";
 import { EvidenceFiles } from "./evidence-files";
 import type { FileQueueState } from "./evidence-upload-queue";
 
@@ -17,7 +18,12 @@ export function checklistGroups(answers: Answers, notes: Record<string, string>,
 }
 
 export function evidenceStatus(files: EvidenceFile[] = [], note = "") {
-  if (files.length) return `已添加 ${files.length} 份文件`;
+  if (files.length) {
+    const flagged = files.filter(file => documentIssues(file, files).length > 0).length;
+    const reference = files.filter(file => isReferenceFile(file, files)).length;
+    return [`已添加 ${files.length} 份文件`, flagged && `${flagged} 份待处理`, reference && `${reference} 份仅供留存`]
+      .filter(Boolean).join(" · ");
+  }
   return note.trim() ? "仅有说明" : "待整理";
 }
 
@@ -41,7 +47,10 @@ export function EvidenceChecklist({ applicationId, answers, files, notes, onChan
     </>;
   }
   return <div className="workspace-stack">
-    <p>先上传原件。如果是非英文文件，再点原件旁的「添加英文译本」。递交时，请按你在 ImmiAccount 看到的清单上传材料。</p>
+    <div className="grid gap-2">
+      <p>上传后，VBER 会检查文件能否读取、大小是否合适、PDF 是否受保护，以及非英文原件是否配有英文译本。递交时，请按你在 ImmiAccount 看到的清单上传材料。</p>
+      <p className="workspace-meta">Home Affairs 指引 · <a href={DOCUMENT_CHECK_GUIDANCE.attachments}>附件大小与格式</a> · <a href={DOCUMENT_CHECK_GUIDANCE.translations}>英文译本要求</a>（核对日期：{DOCUMENT_CHECK_GUIDANCE.reviewed}）</p>
+    </div>
     <p className="workspace-meta">文件保存在这份草稿里，保留至 {expiry}。继续准备或保存修改后，会再保留 90 天。你可以单独移除文件，也可以在「我的草稿」删除整份草稿。</p>
     <p className="workspace-progress-label">共 {rules.length} 项材料 · {withFiles} 项已有文件 · {notesOnly} 项仅有说明</p>
     {rules.map((rule) => <details className="workspace-item" key={rule.key}>
@@ -56,6 +65,5 @@ export function EvidenceChecklist({ applicationId, answers, files, notes, onChan
       {inactive.map((key) => <details key={key} className="workspace-item"><summary id={`evidence-${key}`}>{EVIDENCE_LABELS[key] ?? key}<span className="workspace-meta">{evidenceStatus(files[key], notes[key])}</span></summary>
         <div className="workspace-stack">{contents(key)}</div></details>)}
     </section>}
-    <a href={OFFICIAL.attachments}>查看 Home Affairs 的附件说明</a>
   </div>;
 }

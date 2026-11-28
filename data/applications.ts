@@ -3,6 +3,7 @@ import { and, asc, desc, eq, gt } from "drizzle-orm";
 import { getDatabase } from "../lib/neon/database";
 import { emptyAnswers, GUIDE_VERSION, normalizeAnswers, type Answers, type Step, type TemplateKind } from "../lib/workspace/model";
 import type { TripPurpose } from "../lib/workspace/draft-start";
+import { invalidateChangedWording, type EnglishWording } from "../lib/workspace/handoff";
 import { applicantDetails, applications, documents, evidenceItems, type SavedTemplate } from "../src/db/schema";
 import { discardApplication, lockApplication, newExpiry, ownedDraft, validId, WorkspaceError } from "./workspace-state";
 export { WorkspaceError } from "./workspace-state";
@@ -15,6 +16,8 @@ const summary = {
 const fileSummary = {
   id: documents.id, evidenceKey: documents.evidenceKey, kind: documents.kind, originalId: documents.originalId,
   fileName: documents.fileName, mediaType: documents.mediaType, size: documents.size, createdAt: documents.createdAt,
+  intendedUse: documents.intendedUse, language: documents.language, fileInspection: documents.fileInspection,
+  referenceOnly: documents.referenceOnly,
 };
 
 export async function listApplications(ownerId: string) {
@@ -39,13 +42,13 @@ export async function getApplication(ownerId: string, id: string) {
     const [draft] = await tx.select({ ...summary, templates: applications.templates }).from(applications)
       .where(and(ownedDraft(ownerId, id), gt(applications.expiresAt, new Date()))).for("share");
     if (!draft || draft.expiresAt.getTime() <= Date.now()) return null;
-    const [details] = await tx.select({ answers: applicantDetails.answers }).from(applicantDetails)
+    const [details] = await tx.select({ answers: applicantDetails.answers, englishWording: applicantDetails.englishWording }).from(applicantDetails)
       .where(and(eq(applicantDetails.applicationId, id), eq(applicantDetails.ownerId, ownerId)));
     const items = await tx.select({ key: evidenceItems.evidenceKey, note: evidenceItems.note }).from(evidenceItems)
       .where(and(eq(evidenceItems.applicationId, id), eq(evidenceItems.ownerId, ownerId)));
     const files = await tx.select(fileSummary).from(documents).where(and(eq(documents.applicationId, id),
       eq(documents.ownerId, ownerId), eq(documents.state, "ready"))).orderBy(asc(documents.createdAt));
-    return { ...draft, answers: normalizeAnswers(details?.answers), documents: files,
+    return { ...draft, answers: normalizeAnswers(details?.answers), englishWording: details?.englishWording ?? {}, documents: files,
       notes: Object.fromEntries(items.map(item => [item.key, item.note])) as Record<string, string> };
   });
 }
@@ -64,6 +67,7 @@ export async function createApplication(ownerId: string, purpose: TripPurpose | 
 export interface ApplicationChanges {
   lastStep: Step;
   answers?: Partial<Answers>;
+  englishWording?: EnglishWording;
   notes?: Record<string, string>;
   templates?: Partial<Record<TemplateKind, SavedTemplate>>;
 }
@@ -72,11 +76,14 @@ export async function saveApplication(ownerId: string, id: string, revision: num
   return getDatabase().transaction(async tx => {
     const draft = await lockApplication(tx, ownerId, id);
     if (draft.revision !== revision) throw new WorkspaceError("conflict");
-    if (changes.answers) {
+    if (changes.answers || changes.englishWording) {
       const scope = and(eq(applicantDetails.applicationId, id), eq(applicantDetails.ownerId, ownerId));
-      const [old] = await tx.select({ answers: applicantDetails.answers }).from(applicantDetails).where(scope);
+      const [old] = await tx.select({ answers: applicantDetails.answers, englishWording: applicantDetails.englishWording })
+        .from(applicantDetails).where(scope);
       if (!old) throw new WorkspaceError("unavailable");
-      await tx.update(applicantDetails).set({ answers: normalizeAnswers({ ...old.answers, ...changes.answers }) }).where(scope);
+      const answers = normalizeAnswers({ ...old.answers, ...changes.answers });
+      const englishWording = invalidateChangedWording({ ...old.englishWording, ...changes.englishWording }, old.answers, answers);
+      await tx.update(applicantDetails).set({ answers, englishWording }).where(scope);
     }
     for (const [evidenceKey, note] of Object.entries(changes.notes ?? {})) {
       await tx.insert(evidenceItems).values({ ownerId, applicationId: id, evidenceKey, note })

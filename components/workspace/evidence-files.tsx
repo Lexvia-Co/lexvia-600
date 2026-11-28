@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { beginEvidenceUpload, deleteEvidenceFile, finishEvidenceUpload } from "@/app/applications/[id]/upload-actions";
-import { ACCEPT_DOCUMENTS, type EvidenceFile } from "@/lib/workspace/storage-policy";
+import { beginEvidenceUpload, deleteEvidenceFile, finishEvidenceUpload, inspectEvidenceFile, updateEvidenceDetails } from "@/app/applications/[id]/upload-actions";
+import { ACCEPT_DOCUMENTS, type EvidenceDetailsChange, type EvidenceFile } from "@/lib/workspace/storage-policy";
+import { EvidenceFileChecks } from "./evidence-file-checks";
 import { queueFiles, uploadQueuedFiles, type FileQueueState, type QueuedFile } from "./evidence-upload-queue";
 
 function fileSize(size: number) {
@@ -31,16 +32,17 @@ export function EvidenceFiles({
 }) {
   const router = useRouter();
   const controlId = useId();
-  const translationInput = useRef<HTMLInputElement>(null);
-  const translationTarget = useRef<QueuedFile["original"]>(null);
+  const additionalInput = useRef<HTMLInputElement>(null);
+  const additionalTarget = useRef<QueuedFile["original"]>(null);
   const busyRef = useRef(false);
-  const [busy, setBusy] = useState(false);
+  const [operation, setOperation] = useState<"uploading" | "updating" | null>(null);
+  const busy = operation !== null;
   const [selection, setSelection] = useState<QueuedFile[]>([]);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
   const originals = files.filter(file => file.role === "original");
   const uploadable = selection.filter(entry => entry.state === "ready" || entry.state === "failed");
-  const queueState: FileQueueState = busy ? "uploading" : selection.some(entry => entry.state !== "rejected") ? "pending" : "empty";
+  const queueState: FileQueueState = operation ?? (selection.some(entry => entry.state !== "rejected") ? "pending" : "empty");
 
   useEffect(() => {
     onFileQueueChange?.(evidenceKey, queueState);
@@ -72,7 +74,7 @@ export function EvidenceFiles({
   async function upload(entries: QueuedFile[]) {
     if (busyRef.current || !entries.length) return;
     busyRef.current = true;
-    setBusy(true);
+    setOperation("uploading");
     setNotice("正在上传…");
     try {
       const { saved, failed } = await uploadQueuedFiles(entries, uploadOne, (id, state, message) => {
@@ -84,14 +86,14 @@ export function EvidenceFiles({
       if (saved) router.refresh();
     } finally {
       busyRef.current = false;
-      setBusy(false);
+      setOperation(null);
     }
   }
 
   async function remove(file: EvidenceFile) {
     if (busyRef.current) return;
     busyRef.current = true;
-    setBusy(true);
+    setOperation("updating");
     try {
       const result = await deleteEvidenceFile(applicationId, file.id);
       setNotice(result.ok ? `已移除「${file.name}」。` : result.message);
@@ -104,32 +106,62 @@ export function EvidenceFiles({
       setNotice("没能移除文件，请重试。");
     } finally {
       busyRef.current = false;
-      setBusy(false);
+      setOperation(null);
+    }
+  }
+
+  function chooseFor(original: QueuedFile["original"]) {
+    additionalTarget.current = original;
+    additionalInput.current?.click();
+  }
+
+  async function updateCheck(file: EvidenceFile, change?: EvidenceDetailsChange) {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    const trigger = document.activeElement;
+    setOperation("updating");
+    setNotice("");
+    try {
+      const result = change ? await updateEvidenceDetails(applicationId, file.id, change)
+        : await inspectEvidenceFile(applicationId, file.id);
+      setNotice(result.ok ? `已更新「${file.name}」的材料检查。` : result.message);
+      if (result.ok) router.refresh();
+    } catch {
+      setNotice(`暂时无法更新「${file.name}」的材料检查，请重试。`);
+    } finally {
+      busyRef.current = false;
+      setOperation(null);
+      // Disabling a radio or removing a resolved action can send keyboard focus to the page body.
+      requestAnimationFrame(() => {
+        if (document.activeElement !== document.body) return;
+        const target = trigger instanceof HTMLElement && trigger.isConnected ? trigger : document.getElementById(`file-${file.id}`);
+        target?.focus({ preventScroll: true });
+      });
     }
   }
 
   function fileRow(file: EvidenceFile) {
     const hasTranslations = files.some(item => item.originalId === file.id) || selection.some(item => item.original?.id === file.id);
+    const original = file.role === "translation" ? originals.find(item => item.id === file.originalId) : undefined;
     return (
-      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="text-xs text-muted-foreground">{file.role === "translation" ? "英文译本" : "原件"}</span>
-        <EvidenceDownload file={file} />
-        <span className="text-xs text-muted-foreground">{fileSize(file.size)}</span>
-        {confirmId === file.id ? (
-          <span className="flex flex-wrap items-center gap-2 text-sm">
-            {hasTranslations ? "移除原件也会移除它的英文译本。确认移除？" : "确认移除这个文件？"}
-            <Button type="button" size="sm" variant="destructive" disabled={busy} onClick={() => remove(file)}>确认移除</Button>
-            <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => setConfirmId(null)}>取消</Button>
-          </span>
-        ) : <>
-          {file.role === "original" && <Button type="button" variant="outline" size="sm" disabled={busy}
-            aria-label={`为 ${file.name} 添加英文译本`} onClick={() => {
-              translationTarget.current = { id: file.id, name: file.name };
-              translationInput.current?.click();
-            }}>添加英文译本</Button>}
-          <Button type="button" variant="ghost" size="sm" aria-label={`移除 ${file.name}`} disabled={busy} onClick={() => setConfirmId(file.id)}>移除</Button>
-        </>}
-      </div>
+      <section id={`file-${file.id}`} tabIndex={-1} aria-label={file.name} className="evidence-file">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="text-xs text-muted-foreground">{file.role === "translation" ? "英文译本" : "原件"}</span>
+          <EvidenceDownload file={file} />
+          <span className="text-xs text-muted-foreground">{fileSize(file.size)}</span>
+          {confirmId === file.id ? (
+            <span className="flex flex-wrap items-center gap-2 text-sm">
+              {hasTranslations ? "移除原件也会移除它的英文译本。确认移除？" : "确认移除这个文件？"}
+              <Button type="button" size="sm" variant="destructive" disabled={busy} onClick={() => remove(file)}>确认移除</Button>
+              <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => setConfirmId(null)}>取消</Button>
+            </span>
+          ) : <Button type="button" variant="ghost" size="sm" aria-label={`移除 ${file.name}`}
+            disabled={busy} onClick={() => setConfirmId(file.id)}>移除</Button>}
+        </div>
+        <EvidenceFileChecks file={file} files={files} busy={busy}
+          onChange={change => updateCheck(file, change)} onInspect={() => updateCheck(file)}
+          onChoose={() => chooseFor(original ?? null)} onTranslate={() => chooseFor(file)} />
+      </section>
     );
   }
 
@@ -140,15 +172,15 @@ export function EvidenceFiles({
           {originals.map(file => (
             <li key={file.id}>
               {fileRow(file)}
-              <ul className="ms-3 border-s ps-3">
+              <ul className="ms-3 grid gap-2 border-s ps-3">
                 {files.filter(item => item.originalId === file.id).map(item => <li key={item.id}>{fileRow(item)}</li>)}
               </ul>
             </li>
           ))}
         </ul>
       )}
-      <input type="file" hidden ref={translationInput} multiple accept={ACCEPT_DOCUMENTS} disabled={busy}
-        onChange={event => { if (translationTarget.current) selectFiles(event.currentTarget, translationTarget.current); }} />
+      <input type="file" hidden ref={additionalInput} multiple accept={ACCEPT_DOCUMENTS} disabled={busy}
+        onChange={event => selectFiles(event.currentTarget, additionalTarget.current)} />
       <Field className="gap-1.5">
         <FieldLabel htmlFor={`${controlId}-file`}>选择原件</FieldLabel>
         <Input type="file" id={`${controlId}-file`} accept={ACCEPT_DOCUMENTS} multiple disabled={busy}

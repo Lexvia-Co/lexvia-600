@@ -10,6 +10,7 @@ import {
   EVIDENCE_LABELS, MAX_TEMPLATE_LENGTH, STEP_FIELDS, STEPS, TEMPLATE_LABELS, normalizeAnswers, validateStep,
 } from "@/lib/workspace/model";
 import { isDocumentId } from "@/lib/workspace/storage-policy";
+import { validEnglishWording } from "@/lib/workspace/handoff";
 import { isTripPurpose, type TripPurpose } from "@/lib/workspace/draft-start";
 
 const invalid = { ok: false as const, message: "提交的信息有误，请检查后重试。" };
@@ -74,7 +75,8 @@ export async function saveDraft(input: SaveInput): Promise<SaveResult> {
       || !Number.isSafeInteger(input.revision) || input.revision < 0
       || !STEPS.includes(input.step) || !STEPS.includes(input.destination)
       || typeof input.continue !== "boolean") return invalid;
-  const { id, step, destination, revision, notes, templates } = input;
+  const { id, step, destination, revision, notes, templates, englishWording } = input;
+  if (englishWording !== undefined && (step !== "review" || !validEnglishWording(englishWording))) return invalid;
   const fields = STEP_FIELDS[step];
   let answers = input.answers;
   if (answers !== undefined) {
@@ -99,7 +101,7 @@ export async function saveDraft(input: SaveInput): Promise<SaveResult> {
         typeof value.fingerprint !== "string" || value.fingerprint.length > 128 ||
         Object.keys(value).some((part) => part !== "body" && part !== "fingerprint")))) return invalid;
   try {
-    const saved = await saveApplication(userId, id, revision, { lastStep: destination, answers, notes, templates });
+    const saved = await saveApplication(userId, id, revision, { lastStep: destination, answers, notes, templates, englishWording });
     revalidatePath("/applications");
     revalidatePath(`/applications/${id}/${step}`);
     if (destination !== step) revalidatePath(`/applications/${id}/${destination}`);

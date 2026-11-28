@@ -2,12 +2,13 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
-import { discardPendingUpload, finalizeUpload, removeDocument, reserveUpload } from "@/data/documents";
+import { discardPendingUpload, finalizeUpload, inspectDocumentFile, removeDocument, reserveUpload, updateDocumentDetails } from "@/data/documents";
 import { RESERVATION_LIFETIME, WorkspaceError } from "@/data/workspace-state";
 import { EVIDENCE_LABELS } from "@/lib/workspace/model";
-import { InvalidUpload, recordFileFailure, signUpload, verifyAndPublish, type FileOperation } from "@/lib/workspace/storage";
+import { inspectStoredFile, InvalidUpload, recordFileFailure, signUpload, verifyAndPublish, type FileOperation } from "@/lib/workspace/storage";
 import {
-  UPLOAD_URL_SECONDS, documentMedia, isDocumentId, validFileName, validFileSize, type UploadInput,
+  UPLOAD_URL_SECONDS, documentMedia, isDocumentId, validEvidenceChange, validFileName, validFileSize,
+  type EvidenceDetailsChange, type UploadInput,
 } from "@/lib/workspace/storage-policy";
 
 type ActionFailure = { ok: false; message: string; retryable: boolean };
@@ -77,6 +78,32 @@ export async function finishEvidenceUpload(applicationId: string, documentId: st
       }
     }
     return failure("finalize", error);
+  }
+}
+
+export async function updateEvidenceDetails(applicationId: string, documentId: string, change: EvidenceDetailsChange): Promise<MutationResult> {
+  const { userId } = await auth.protect();
+  if (!isDocumentId(applicationId) || !isDocumentId(documentId) || !validEvidenceChange(change)) {
+    return failure("details", new WorkspaceError("invalid"));
+  }
+  try {
+    await updateDocumentDetails(userId, applicationId, documentId, change);
+    refreshFiles(applicationId);
+    return { ok: true };
+  } catch (error) {
+    return failure("details", error);
+  }
+}
+
+export async function inspectEvidenceFile(applicationId: string, documentId: string): Promise<MutationResult> {
+  const { userId } = await auth.protect();
+  if (!isDocumentId(applicationId) || !isDocumentId(documentId)) return failure("inspect", new WorkspaceError("invalid"));
+  try {
+    await inspectDocumentFile(userId, applicationId, documentId, inspectStoredFile);
+    refreshFiles(applicationId);
+    return { ok: true };
+  } catch (error) {
+    return failure("inspect", error);
   }
 }
 

@@ -1,7 +1,11 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { Readable } from "node:stream";
 import { AwsClient } from "aws4fetch";
 import type { ErrorCode } from "@/data/workspace-state";
+import type { FileInspection } from "./document-checks";
+import { inspectPdf } from "./pdf-inspection";
+import { createEvidenceArchive, type ExportFile } from "./evidence-archive";
 import {
   DOWNLOAD_URL_SECONDS, UPLOAD_URL_SECONDS, isDocumentId, validFileName, validFileSize,
   type DocumentMedia, type DocumentRole, type EvidenceFile,
@@ -11,7 +15,7 @@ type ObjectKind = "staging" | "final";
 
 export class InvalidUpload extends Error {}
 
-export type FileOperation = "reserve" | "finalize" | "discard_pending" | "remove";
+export type FileOperation = "reserve" | "finalize" | "discard_pending" | "remove" | "details" | "inspect";
 type FailureCategory = ErrorCode | "file_contents" | "service";
 const lastFailureEvents = new Map<string, number>();
 
@@ -67,11 +71,45 @@ export async function signDownload(id: string, seconds = DOWNLOAD_URL_SECONDS) {
   return (await storageClient().sign(url, { method: "GET", aws: { signQuery: true } })).url;
 }
 
+export async function publishEvidenceArchive(archiveId: string, files: ExportFile[]) {
+  const stop = new AbortController();
+  const signal = AbortSignal.any([stop.signal, AbortSignal.timeout(120_000)]);
+  const client = storageClient();
+  const { body, size } = createEvidenceArchive(files, (file, signal) => client.fetch(objectUrl(file.id, "final"), {
+    method: "GET", cache: "no-store", redirect: "error", signal,
+    headers: { "x-amz-content-sha256": createHash("sha256").digest("hex") },
+  }), signal);
+  const stream = Readable.toWeb(body, {
+    strategy: { highWaterMark: 65_536, size: chunk => chunk.byteLength },
+  }) as ReadableStream<Uint8Array>;
+  try {
+    // A presigned PUT supports a fixed-length streamed body without first buffering it to hash it.
+    const target = objectUrl(archiveId, "final");
+    target.searchParams.set("X-Amz-Expires", "120");
+    const headers = {
+      "content-type": "application/zip", "content-length": String(size),
+      "content-disposition": 'attachment; filename="VBER-evidence.zip"', "cache-control": "private, no-store",
+    };
+    const signed = await client.sign(target, { method: "PUT", headers, aws: { signQuery: true, allHeaders: true } });
+    const init = { method: "PUT", headers, cache: "no-store", redirect: "error", signal, duplex: "half", body: stream } as const;
+    const response = await fetch(signed.url, init);
+    if (!response.ok) throw new Error("Archive write failed");
+  } finally {
+    stop.abort();
+    body.destroy();
+  }
+}
+
 export function buildEvidenceFile(
-  doc: { id: string; fileName: string; size: number; kind: DocumentRole; originalId: string | null }, applicationId: string,
+  doc: { id: string; fileName: string; size: number; kind: DocumentRole; originalId: string | null; mediaType: string }
+    & Pick<EvidenceFile, "language" | "intendedUse" | "fileInspection" | "referenceOnly">,
+  applicationId: string,
 ): EvidenceFile {
   return {
     id: doc.id, name: doc.fileName, size: doc.size, role: doc.kind, originalId: doc.originalId,
+    language: doc.kind === "translation" ? "english" : doc.language,
+    intendedUse: doc.kind === "translation" || doc.mediaType === "application/pdf" ? "document" : doc.intendedUse,
+    fileInspection: doc.fileInspection, referenceOnly: doc.referenceOnly,
     downloadUrl: `/applications/${applicationId}/files/${doc.id}`,
   };
 }
@@ -134,7 +172,32 @@ export function identifyFile(bytes: Uint8Array): DocumentMedia | undefined {
     && file.subarray(-12).equals(Buffer.from("0000000049454e44ae426082", "hex"))) return "image/png";
 }
 
-export async function verifyAndPublish(doc: { id: string; size: number; mediaType: string; fileName: string }) {
+export async function inspectFile(bytes: Uint8Array, mediaType: string): Promise<FileInspection> {
+  if (identifyFile(bytes) !== mediaType) return "unreadable";
+  if (mediaType === "application/pdf") return inspectPdf(bytes);
+  const { default: sharp } = await import("sharp");
+  try {
+    // stats() reads the pixel data, which also catches damaged scans with intact headers.
+    await sharp(bytes, { limitInputPixels: 48_000_000, failOn: "warning" }).timeout({ seconds: 5 }).stats();
+    return "clear";
+  } catch {
+    return "unreadable";
+  }
+}
+
+export async function inspectStoredFile(doc: { id: string; size: number; mediaType: string }): Promise<FileInspection> {
+  const response = await objectRequest(doc.id, "final", "GET");
+  if (response.status === 404) return "unreadable";
+  if (!response.ok) throw new Error("Storage read failed");
+  try {
+    return await inspectFile(await readExactBytes(response, doc.size), doc.mediaType);
+  } catch (error) {
+    if (error instanceof InvalidUpload) return "unreadable";
+    throw error;
+  }
+}
+
+export async function verifyAndPublish(doc: { id: string; size: number; mediaType: string; fileName: string }): Promise<FileInspection> {
   if (!validFileName(doc.fileName) || !validFileSize(doc.size)) throw new InvalidUpload();
   const staged = await objectRequest(doc.id, "staging", "GET");
   if (staged.status === 404) throw new InvalidUpload();
@@ -152,4 +215,5 @@ export async function verifyAndPublish(doc: { id: string; size: number; mediaTyp
     "cache-control": "private, no-store",
   });
   if (!published.ok) throw new Error("Storage write failed");
+  return inspectFile(bytes, actualType);
 }

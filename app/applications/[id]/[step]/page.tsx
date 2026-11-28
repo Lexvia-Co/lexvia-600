@@ -6,8 +6,11 @@ import type { GroupedFiles } from "@/components/workspace/evidence-checklist";
 import { buildEvidenceFile } from "@/lib/workspace/storage";
 import { STEP_FIELDS, STEPS } from "@/lib/workspace/model";
 import { answerProgress } from "@/lib/workspace/step-progress";
+import { canUseAssistantPilot } from "@/lib/assistant/access";
 
 export const metadata = { title: "申请准备工作区" };
+// Allow a full evidence ZIP to stream to private storage before returning its download link.
+export const maxDuration = 180;
 
 export default async function DraftPage({ params }: { params: Promise<{id: string; step: string}> }) {
   const { userId } = await auth.protect();
@@ -27,6 +30,7 @@ export default async function DraftPage({ params }: { params: Promise<{id: strin
   const keys = step === "evidence" ? ["purpose", "payer"] as const : STEP_FIELDS[step];
   const answers = needsTemplates ? draft.answers : Object.fromEntries(keys.map((key) => [key, draft.answers[key]]));
   return <DraftEditor key={id + step} id={id} step={step} revision={draft.revision} initialAnswers={answers}
+    initialWording={step === "review" ? draft.englishWording : {}} pilotAvailable={await canUseAssistantPilot(userId)}
     progress={{ identity: answerProgress("identity", draft.answers), visit: answerProgress("visit", draft.answers),
       funding: answerProgress("funding", draft.answers) }}
     initialNotes={needsEvidence ? draft.notes : {}} initialTemplates={needsTemplates ? draft.templates : {}}

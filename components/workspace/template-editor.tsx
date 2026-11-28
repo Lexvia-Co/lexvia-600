@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { MAX_TEMPLATE_LENGTH, TEMPLATE_LABELS, TEMPLATE_REVIEW_NOTICE, templateText, templateFingerprint,
   type Answers, type TemplateKind } from "@/lib/workspace/model";
 import type { SavedTemplates } from "./editor-types";
+import { CopyButton } from "./copy-button";
 
 export function TemplateEditor({ answers, templates, onChange }: {
   answers: Answers; templates: SavedTemplates;
@@ -44,10 +45,7 @@ export function TemplateEditor({ answers, templates, onChange }: {
           </Field>
           <div className="workspace-actions">
             <Button type="button" variant="outline" onClick={() => setPreview(kind)}>预览与打印</Button>
-            <Button type="button" variant="outline" onClick={async () => {
-              try { await navigator.clipboard.writeText(body); setFeedback(TEMPLATE_LABELS[kind] + "已复制。"); }
-              catch { setFeedback("没能自动复制，请选中文稿再复制。"); }
-            }}>复制文稿</Button>
+            <CopyButton text={body} targetId={kind} label={TEMPLATE_LABELS[kind] + "文稿"}>复制文稿</CopyButton>
             {previous ? <Button type="button" variant="ghost" onClick={() => setReplace(kind)}>重新生成</Button> :
               <Button type="button" variant="ghost" onClick={() => onChange(kind, { body, fingerprint })}>使用此文稿</Button>}
           </div>

@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "10",
+  "dialect": "postgres",
+  "id": "09c5ffc2-26f7-417b-b812-56b0cea9669d",
+  "prevIds": [
+    "fbc0418a-a5e6-4aa8-a665-e03983dd8af3"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "applicant_details",
+        "english_wording"
+      ],
+      "writes": [
+        "s|col|public.applicant_details.english_wording",
+        "n|col|public.applicant_details.english_wording",
+        "e|col|public.applicant_details.english_wording"
+      ],
+      "reads": [
+        "n|tbl|public.applicant_details",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "applicant_details",
+        "name": "english_wording",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'{}'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

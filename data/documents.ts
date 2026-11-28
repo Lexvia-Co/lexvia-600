@@ -2,7 +2,8 @@ import "server-only";
 import { and, asc, eq, lte } from "drizzle-orm";
 import { getDatabase } from "../lib/neon/database";
 import { EVIDENCE_LABELS } from "../lib/workspace/model";
-import { documentMedia, validFileName, validFileSize } from "../lib/workspace/storage-policy";
+import type { FileInspection } from "../lib/workspace/document-checks";
+import { documentMedia, validEvidenceChange, validFileName, validFileSize, type EvidenceDetailsChange } from "../lib/workspace/storage-policy";
 import { applications, documents, storageCleanup } from "../src/db/schema";
 import {
   discardApplication, discardDocuments, enqueueCleanup, lockApplication, newExpiry, ownedDraft,
@@ -22,6 +23,8 @@ export interface UploadInput {
 const uploadFields = {
   id: documents.id, evidenceKey: documents.evidenceKey, kind: documents.kind, originalId: documents.originalId, fileName: documents.fileName,
   size: documents.size, mediaType: documents.mediaType, state: documents.state, createdAt: documents.createdAt,
+  language: documents.language, intendedUse: documents.intendedUse, fileInspection: documents.fileInspection,
+  referenceOnly: documents.referenceOnly,
 };
 export type UploadRecord = Pick<typeof documents.$inferSelect, keyof typeof uploadFields>;
 const MIB = 1024 * 1024;
@@ -82,7 +85,7 @@ export async function readUpload(ownerId: string, draftId: string, documentId: s
 }
 
 export async function finalizeUpload(
-  ownerId: string, draftId: string, documentId: string, verifyAndWrite: (record: UploadRecord) => Promise<void>,
+  ownerId: string, draftId: string, documentId: string, verifyAndWrite: (record: UploadRecord) => Promise<FileInspection>,
 ) {
   if (!validId(documentId)) throw new WorkspaceError("unavailable");
   await getDatabase().transaction(async tx => {
@@ -94,10 +97,41 @@ export async function finalizeUpload(
     if (expired(row.createdAt)) throw new WorkspaceError("unavailable");
     // The callback promotes verified bytes under the deterministic, private final key.
     // Another attempt can safely repeat the write if this transaction does not commit.
-    await verifyAndWrite(row);
+    const fileInspection = await verifyAndWrite(row);
     if (draft.expiresAt.getTime() <= Date.now() || expired(row.createdAt)) throw new WorkspaceError("unavailable");
-    await tx.update(documents).set({ state: "ready" }).where(scope);
+    await tx.update(documents).set({ state: "ready", fileInspection }).where(scope);
     await enqueueCleanup(tx, [documentId], ["staging"]);
+    await refreshExpiry(tx, ownerId, draftId);
+  });
+}
+
+export async function updateDocumentDetails(ownerId: string, draftId: string, documentId: string, change: EvidenceDetailsChange) {
+  if (!validId(documentId) || !validEvidenceChange(change)) throw new WorkspaceError("invalid");
+  await getDatabase().transaction(async tx => {
+    await lockApplication(tx, ownerId, draftId);
+    const scope = and(recordScope(ownerId, draftId, documentId), eq(documents.state, "ready"));
+    const [row] = await tx.select({ kind: documents.kind, mediaType: documents.mediaType }).from(documents).where(scope);
+    if (!row) throw new WorkspaceError("unavailable");
+    if ("language" in change && row.kind !== "original") throw new WorkspaceError("invalid");
+    if ("intendedUse" in change && (row.kind !== "original" || row.mediaType === "application/pdf")) throw new WorkspaceError("invalid");
+    await tx.update(documents).set(change).where(scope);
+    await refreshExpiry(tx, ownerId, draftId);
+  });
+}
+
+export async function inspectDocumentFile(
+  ownerId: string, draftId: string, documentId: string, inspect: (record: UploadRecord) => Promise<FileInspection>,
+) {
+  const row = await readUpload(ownerId, draftId, documentId);
+  if (!row || row.state !== "ready") throw new WorkspaceError("unavailable");
+  if (row.fileInspection !== "unknown") return;
+  // Final objects are immutable. Read outside the transaction and recheck ownership and expiry before saving.
+  const fileInspection = await inspect(row);
+  await getDatabase().transaction(async tx => {
+    await lockApplication(tx, ownerId, draftId);
+    const scope = and(recordScope(ownerId, draftId, documentId), eq(documents.state, "ready"));
+    const [saved] = await tx.update(documents).set({ fileInspection }).where(scope).returning({ id: documents.id });
+    if (!saved) throw new WorkspaceError("unavailable");
     await refreshExpiry(tx, ownerId, draftId);
   });
 }

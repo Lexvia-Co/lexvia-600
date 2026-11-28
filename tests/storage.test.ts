@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import cleanup from "../functions/cleanup";
-import { identifyFile, readExactBytes, recordFileFailure, signDownload, signUpload, verifyAndPublish } from "../lib/workspace/storage";
-import { MAX_FILE_BYTES, validFileName, validFileSize } from "../lib/workspace/storage-policy";
+import { buildEvidenceFile, identifyFile, inspectStoredFile, readExactBytes, recordFileFailure, signDownload, signUpload, verifyAndPublish } from "../lib/workspace/storage";
+import { MAX_FILE_BYTES, validEvidenceChange, validFileName, validFileSize } from "../lib/workspace/storage-policy";
 
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jPZsAAAAASUVORK5CYII=", "base64");
 const pdf = Buffer.from("%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n");
@@ -30,6 +30,31 @@ test("downloaded byte count is bounded even when Content-Length is absent or wro
   await assert.rejects(readExactBytes(new Response(stream()), 1));
   await assert.rejects(readExactBytes(new Response(stream()), 3));
   await assert.rejects(readExactBytes(new Response(stream(), { headers: { "content-length": "9" } }), 2));
+});
+
+test("legacy metadata preserves unknowns and only exposes applicable applicant choices", () => {
+  const draftId = randomUUID();
+  const legacy = {
+    id: randomUUID(), fileName: "原件.pdf", size: 128, mediaType: "application/pdf", kind: "original",
+    originalId: null, language: "unknown", intendedUse: "unknown", fileInspection: "unknown", referenceOnly: false,
+  } as const;
+  const pdfFile = buildEvidenceFile(legacy, draftId);
+  assert.equal(pdfFile.language, "unknown");
+  assert.equal(pdfFile.intendedUse, "document");
+  assert.equal(pdfFile.fileInspection, "unknown");
+  assert.equal(pdfFile.referenceOnly, false);
+  const image = { ...legacy, mediaType: "image/png", fileName: "扫描件.png" };
+  assert.equal(buildEvidenceFile(image, draftId).intendedUse, "unknown");
+  const translation = buildEvidenceFile({ ...image, kind: "translation", originalId: legacy.id }, draftId);
+  assert.equal(translation.language, "english");
+  assert.equal(translation.intendedUse, "document");
+  for (const change of [null, [], { language: 1 }, { intendedUse: "image" },
+    { referenceOnly: "true" }, { language: "english", referenceOnly: true }, { fileInspection: "clear" }]) {
+    assert.equal(validEvidenceChange(change), false);
+  }
+  for (const change of [{ language: "unknown" }, { intendedUse: "portrait" }, { referenceOnly: false }]) {
+    assert.equal(validEvidenceChange(change), true);
+  }
 });
 
 test("reserve a bounded staging PUT, then publish only server-checked bytes", async t => {
@@ -59,10 +84,13 @@ test("reserve a bounded staging PUT, then publish only server-checked bytes", as
     assert.match(request.headers.get("content-disposition") ?? "", /^attachment;/);
     return new Response(null, { status: 200 });
   });
-  await verifyAndPublish({ id, size: pdf.length, fileName: "邀请信.pdf", mediaType: "application/pdf" });
+  // This fixture has PDF start/end markers, but its catalog has no pages.
+  assert.equal(await verifyAndPublish({ id, size: pdf.length, fileName: "邀请信.pdf", mediaType: "application/pdf" }), "unreadable");
   assert.deepEqual(calls, [`GET /assets/workspace/staging/${id}`, `PUT /assets/workspace/final/${id}`]);
   await assert.rejects(verifyAndPublish({ id, size: pdf.length, fileName: "改名.png", mediaType: "image/png" }));
   assert.equal(calls.filter(call => call.startsWith("PUT")).length, 1);
+  assert.equal(await inspectStoredFile({ id, size: pdf.length, mediaType: "application/pdf" }), "unreadable");
+  assert.equal(calls.at(-1), `GET /assets/workspace/final/${id}`);
 });
 
 test("scheduled cleanup refuses ordinary HTTP calls before opening Postgres", async () => {
